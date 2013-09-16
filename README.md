@@ -3,7 +3,7 @@ ReleaseNotesCompiler
 
 In order to improve the quality for our release notes we'll generate them based on the relevant github issues.
 
-* Each build will generate the release notes (master, develop, release-* , hotfix-* )
+* The build server will compile the release notes either for each commit or daily
 * Build will fail if release notes can't be generated
 * All closed issues for a milestone will be included
 * All issues must have one of the follwing tags Bug|Feature|Internal refactoring

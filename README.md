@@ -5,8 +5,9 @@ In order to improve the quality for our release notes we'll generate them based 
 
 * Each build will generate the release notes (master, develop, release-* , hotfix-* )
 * Build will fail if release notes can't be generated
-* All closes issues for a milestone will be included
+* All closed issues for a milestone will be included
 * All issues must have one of the follwing tags Bug|Feature|Internal refactoring
+* For now the text is taken from the name of the issue
 * Milestones are named {major.minor.patch}
 * Version is picked up from the build number (GFV) and that info is used to find the milestone
 * No milestone found is considerd a exception

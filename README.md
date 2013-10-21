@@ -14,5 +14,6 @@ In order to improve the quality for our release notes we'll generate them based 
 * The output format should follow http://www.semanticreleasenotes.org/
 * We'll generate release notes as markdown for display on the website
 * We'll generate release notes as X for inclusion in our nugets
+* For each milestone a corresponding GitHub release will be created with the same name and set to tag master with the same tag when published
 
 

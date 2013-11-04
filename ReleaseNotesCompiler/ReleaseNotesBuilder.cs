@@ -69,7 +69,7 @@ namespace ReleaseNotesCompiler
 
                 foreach (var issue in features)
                 {
-                    stringBuilder.AppendFormat("#### [#{0} {1}]({2})\r\n\r\n{3}\r\n\r\n", issue.Number, issue.Title, HtmlUrl(issue), issue.ExtractSummary());
+                    stringBuilder.AppendFormat("### [#{0} {1}]({2})\r\n\r\n{3}\r\n\r\n", issue.Number, issue.Title, HtmlUrl(issue), issue.ExtractSummary());
                 }
                 stringBuilder.AppendLine();
             }
@@ -79,8 +79,7 @@ namespace ReleaseNotesCompiler
         {
 //TODO: move back to HtmlUrl when https://github.com/octokit/octokit.net/issues/162 is fixed
             //var htmlUrl = issue.HtmlUrl;
-            var htmlUrl = string.Format("https://github.com/{0}/{1}/issues/{2}", user, repository, issue.Number);
-            return htmlUrl;
+            return string.Format("https://github.com/{0}/{1}/issues/{2}", user, repository, issue.Number);
         }
 
 

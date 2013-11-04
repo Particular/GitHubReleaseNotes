@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Data.Odbc;
 using System.Linq;
 using System.Text;
 using Octokit;
@@ -11,9 +13,14 @@ namespace ReleaseNotesCompiler
         {
             return issue.PullRequest != null;
         }
+
         public static string ExtractSummary(this Issue issue)
         {
-            var lines = issue.Body.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+            IEnumerable<string> lines = issue.Body.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+
+
+            lines = FixHeaders(lines);
+
 
             var builder = new StringBuilder();
             if (lines.Any(x => x.StartsWith("--")))
@@ -39,7 +46,6 @@ namespace ReleaseNotesCompiler
                 var inCode = false;
                 foreach (var line in lines)
                 {
-
                     if (line.StartsWith("```"))
                     {
                         inCode = !inCode;
@@ -59,6 +65,27 @@ namespace ReleaseNotesCompiler
                 }
             }
             return builder.ToString();
+        }
+
+        static IEnumerable<string> FixHeaders(IEnumerable<string> lines)
+        {
+            var inCode = false;
+            foreach (var line in lines)
+            {
+
+                if (line.StartsWith("```"))
+                {
+                    inCode = !inCode;
+                }
+                if (!inCode && line.StartsWith("#"))
+                {
+                    yield return "###" + line;
+                }
+                else
+                {
+                    yield return line;    
+                }
+            }
         }
     }
 }

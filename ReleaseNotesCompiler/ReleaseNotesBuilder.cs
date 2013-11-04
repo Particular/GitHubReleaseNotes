@@ -25,15 +25,7 @@ namespace ReleaseNotesCompiler
         public async Task<string> BuildReleaseNotes()
         {
             var milestone = await GetMilestone();
-            var repositoryIssueRequest = new RepositoryIssueRequest
-            {
-                Milestone = milestone.Number.ToString()
-            };
-            var issues = await gitHubClient.Issue.GetForRepository(user, repository, repositoryIssueRequest);
-            var list = issues.Where(x => !x.IsPullRequest()).ToList();
-
-            CheckForBadIssues(list);
-
+            var issues = await GetIssues(milestone);
             var stringBuilder = new StringBuilder();
             Append(issues, "Bug", stringBuilder);
             Append(issues, "Feature", stringBuilder);
@@ -41,20 +33,40 @@ namespace ReleaseNotesCompiler
             return stringBuilder.ToString();
         }
 
-        void CheckForBadIssues(List<Issue> list)
+        async Task<List<Issue>> GetIssues(Milestone milestone)
         {
-            foreach (var issue in list.Where(x => x.Labels.All(l => l.Name != "Bug" && l.Name != "Internal refactoring" && l.Name != "Feature" && l.Name != "Improvement")))
+            var closedIssueRequest = new RepositoryIssueRequest
             {
-                string foundLabelList;
-                if (issue.Labels.Count == 0)
-                {
-                    foundLabelList = "none";
-                }
-                else
-                {
-                    foundLabelList = string.Format("'{0}'", string.Join("', '", issue.Labels.Select(x => x.Name)));
-                }
-                var message = string.Format("Bad Issue {0} expected to find a label with either 'Bug', 'Internal refactoring', 'Improvement' or 'Feature'. Instead found {1}.", HtmlUrl(issue), foundLabelList);
+                Milestone = milestone.Number.ToString(),
+                State = ItemState.Closed
+            };
+            var openIssueRequest = new RepositoryIssueRequest
+            {
+                Milestone = milestone.Number.ToString(),
+                State = ItemState.Open
+            };
+            var closedIssues = await gitHubClient.Issue.GetForRepository(user, repository, closedIssueRequest);
+            var openIssues = await gitHubClient.Issue.GetForRepository(user, repository, openIssueRequest);
+
+            var issues = new List<Issue>();
+            foreach (var issue in openIssues.Union(closedIssues).Where(x=>!x.IsPullRequest()))
+            {
+                CheckForValidLabels(issue);
+                issues.Add(issue);
+            }
+            return issues;
+        }
+
+        void CheckForValidLabels(Issue issue)
+        {
+            var count = issue.Labels.Count(l => 
+                l.Name == "Bug" || 
+                l.Name == "Internal refactoring" || 
+                l.Name == "Feature" || 
+                l.Name == "Improvement");
+            if (count != 1)
+            {
+                var message = string.Format("Bad Issue {0} expected to find a label with either 'Bug', 'Internal refactoring', 'Improvement' or 'Feature'.", HtmlUrl(issue));
                 throw new Exception(message);
             }
         }

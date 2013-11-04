@@ -57,7 +57,9 @@ namespace ReleaseNotesCompiler
                         {
                             builder.Append("```\r\n\r\n");
                         }
-                        builder.AppendFormat("Content trimmed. See [full issue]({0})", issue.HtmlUrl);
+                        builder.Append("*Content trimmed. See full issue*");
+                        //TODO: include URL when octokit is updated
+                        //builder.AppendFormat("*Content trimmed. See [full issue]({0})*", issue.HtmlUrl);
                         break;
                     }
 

@@ -27,7 +27,6 @@ namespace ReleaseNotesCompiler
             var milestone = await GetMilestone();
             var repositoryIssueRequest = new RepositoryIssueRequest
             {
-                State = ItemState.Closed,
                 Milestone = milestone.Number.ToString()
             };
             var issues = await gitHubClient.Issue.GetForRepository(user, repository, repositoryIssueRequest);
@@ -44,7 +43,7 @@ namespace ReleaseNotesCompiler
 
         void CheckForBadIssues(List<Issue> list)
         {
-            foreach (var issue in list.Where(x => x.Labels.All(l => l.Name != "Bug" && l.Name != "Internal refactoring" && l.Name != "Feature")))
+            foreach (var issue in list.Where(x => x.Labels.All(l => l.Name != "Bug" && l.Name != "Internal refactoring" && l.Name != "Feature" && l.Name != "Improvement")))
             {
                 string foundLabelList;
                 if (issue.Labels.Count == 0)
@@ -55,7 +54,7 @@ namespace ReleaseNotesCompiler
                 {
                     foundLabelList = string.Format("'{0}'", string.Join("', '", issue.Labels.Select(x => x.Name)));
                 }
-                var message = string.Format("Bad Issue {0} expected to find a label with either 'Bug', 'Internal refactoring' or 'Feature'. Instead found {1}.", HtmlUrl(issue), foundLabelList);
+                var message = string.Format("Bad Issue {0} expected to find a label with either 'Bug', 'Internal refactoring', 'Improvement' or 'Feature'. Instead found {1}.", HtmlUrl(issue), foundLabelList);
                 throw new Exception(message);
             }
         }

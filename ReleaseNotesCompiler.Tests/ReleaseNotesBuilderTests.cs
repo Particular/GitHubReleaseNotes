@@ -1,5 +1,8 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using System.Net.Http.Headers;
 using NUnit.Framework;
+using Octokit;
 using ReleaseNotesCompiler;
 
 [TestFixture]
@@ -26,5 +29,11 @@ public class ReleaseNotesBuilderTests
         var result = await releaseNotesBuilder.BuildReleaseNotes();
         Debug.WriteLine(result);
         ClipBoardHelper.SetClipboard(result);
+    }
+    [Test]
+    [Explicit]
+    public async void OctokitTests()
+    {
+        var gitHubClient = ClientBuilder.Build();
     }
 }

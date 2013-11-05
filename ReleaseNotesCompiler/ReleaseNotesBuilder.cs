@@ -13,6 +13,8 @@ namespace ReleaseNotesCompiler
         string user;
         string repository;
         string milestoneTitle;
+       // List<Milestone> milestones;
+        Milestone targetMilestone;
 
         public ReleaseNotesBuilder(GitHubClient gitHubClient, string user, string repository, string milestoneTitle)
         {
@@ -24,14 +26,49 @@ namespace ReleaseNotesCompiler
 
         public async Task<string> BuildReleaseNotes()
         {
-            var milestone = await GetMilestone();
-            var issues = await GetIssues(milestone);
+            //await GetMilestones();
+
             var stringBuilder = new StringBuilder();
-            Append(issues, "Bug", stringBuilder);
+            targetMilestone = await GetTargetMilestone();
+            //var commitsLink = GetCommitsLink();
+            //stringBuilder.AppendFormat(@"To see the full list of commits for this release click [here]({0}).", commitsLink);
+            //stringBuilder.AppendLine();
+
+            stringBuilder.AppendFormat(@"To see the full list of issues see [Milestone {0}](https://github.com/{1}/{2}/issues?milestone={3}&page=1&state=closed).", targetMilestone.Title, user, repository, targetMilestone.Number);
+
+            stringBuilder.AppendLine();
+            stringBuilder.AppendLine();
+            stringBuilder.AppendLine(targetMilestone.Description);
+            stringBuilder.AppendLine();
+            var issues = await GetIssues(targetMilestone);
             Append(issues, "Feature", stringBuilder);
             Append(issues, "Improvement", stringBuilder);
+            Append(issues, "Bug", stringBuilder);
+
+            stringBuilder.Append(@"## Where to get it
+You can download this release from:
+- Our [website](http://particular.net/downloads)
+- Or [nuget](https://www.nuget.org/profiles/nservicebus/)");
             return stringBuilder.ToString();
         }
+
+        //async Task GetMilestones()
+        //{
+        //    var milestonesClient = gitHubClient.Issue.Milestone;
+        //    var openList = await milestonesClient.GetForRepository(user, repository, new MilestoneRequest { State = ItemState.Open });
+        //    var closedList = await milestonesClient.GetForRepository(user, repository, new MilestoneRequest { State = ItemState.Closed });
+        //    milestones = openList.Union(closedList).ToList();
+        //}
+
+        //string GetCommitsLink()
+        //{
+        //    var previousMilestone = milestones.FirstOrDefault(x => x.DueOn < targetMilestone.DueOn);
+        //    if (previousMilestone == null)
+        //    {
+        //        return string.Format("https://github.com/{0}/{1}/commits/{2}", user, repository, targetMilestone.Title);
+        //    }
+        //    return string.Format("https://github.com/{0}/{1}/compare/{2}...{3}", user, repository, previousMilestone.Title, targetMilestone.Title);
+        //}
 
         async Task<List<Issue>> GetIssues(Milestone milestone)
         {
@@ -95,10 +132,12 @@ namespace ReleaseNotesCompiler
         }
 
 
-        async Task<Milestone> GetMilestone()
+        async Task<Milestone> GetTargetMilestone()
         {
-            var milestones = await gitHubClient.Issue.Milestone.GetForRepository(user, repository);
-            var milestone = milestones.FirstOrDefault(x => x.Title == milestoneTitle);
+
+            var milestonesClient = gitHubClient.Issue.Milestone;
+            var openList = await milestonesClient.GetForRepository(user, repository, new MilestoneRequest { State = ItemState.Open });
+            var milestone = openList.FirstOrDefault(x => x.Title == milestoneTitle);
             if (milestone == null)
             {
                 throw new Exception(string.Format("Could not find milestone for '{0}'.", milestoneTitle));

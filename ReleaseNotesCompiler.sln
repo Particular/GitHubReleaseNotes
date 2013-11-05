@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReleaseNotesCompiler", "ReleaseNotesCompiler\ReleaseNotesCompiler.csproj", "{B02A026E-CA3A-48F4-BBA9-EB337B0A2035}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReleaseNotesCompiler", "Compiler\ReleaseNotesCompiler.csproj", "{B02A026E-CA3A-48F4-BBA9-EB337B0A2035}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReleaseNotesCompiler.Tests", "ReleaseNotesCompiler.Tests\ReleaseNotesCompiler.Tests.csproj", "{FAD045A3-CF63-48CA-BA49-8F4D79E3EF4F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReleaseNotesCompiler.Tests", "Tests\ReleaseNotesCompiler.Tests.csproj", "{FAD045A3-CF63-48CA-BA49-8F4D79E3EF4F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

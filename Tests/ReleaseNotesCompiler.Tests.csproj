@@ -57,7 +57,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ReleaseNotesCompiler\ReleaseNotesCompiler.csproj">
+    <ProjectReference Include="..\Compiler\ReleaseNotesCompiler.csproj">
       <Project>{B02A026E-CA3A-48F4-BBA9-EB337B0A2035}</Project>
       <Name>ReleaseNotesCompiler</Name>
     </ProjectReference>

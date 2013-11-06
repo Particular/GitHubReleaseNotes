@@ -13,7 +13,7 @@ namespace ReleaseNotesCompiler
         string user;
         string repository;
         string milestoneTitle;
-       // List<Milestone> milestones;
+        List<Milestone> milestones;
         Milestone targetMilestone;
 
         public ReleaseNotesBuilder(GitHubClient gitHubClient, string user, string repository, string milestoneTitle)
@@ -26,67 +26,63 @@ namespace ReleaseNotesCompiler
 
         public async Task<string> BuildReleaseNotes()
         {
-            //await GetMilestones();
+            await GetMilestones();
 
             var stringBuilder = new StringBuilder();
-            targetMilestone = await GetTargetMilestone();
-            //var commitsLink = GetCommitsLink();
-            //stringBuilder.AppendFormat(@"To see the full list of commits for this release click [here]({0}).", commitsLink);
-            //stringBuilder.AppendLine();
-
-            stringBuilder.AppendFormat(@"To see the full list of issues see [Milestone {0}](https://github.com/{1}/{2}/issues?milestone={3}&page=1&state=closed).", targetMilestone.Title, user, repository, targetMilestone.Number);
-
+            GetTargetMilestone();
+            var commitsLink = GetCommitsLink();
+            stringBuilder.AppendFormat(@"This release consist of [these issues]({0}) that were achieved through [these commits]({1}).", targetMilestone.HtmlUrl(),commitsLink);
             stringBuilder.AppendLine();
-            stringBuilder.AppendLine();
+
             stringBuilder.AppendLine(targetMilestone.Description);
             stringBuilder.AppendLine();
+
+            await AddIssues(stringBuilder);
+
+            AddFooter(stringBuilder);
+            return stringBuilder.ToString();
+        }
+        string GetCommitsLink()
+        {
+            var orderedMilestones = milestones.OrderByDescending(x => Version.Parse(x.Title));
+            var previousMilestone = orderedMilestones.FirstOrDefault(x => x.DueOn < targetMilestone.DueOn);
+            if (previousMilestone == null)
+            {
+                return string.Format("https://github.com/{0}/{1}/commits/{2}", user, repository, targetMilestone.Title);
+            }
+            return string.Format("https://github.com/{0}/{1}/compare/{2}...{3}", user, repository, previousMilestone.Title, targetMilestone.Title);
+        }
+
+
+        async Task AddIssues(StringBuilder stringBuilder)
+        {
             var issues = await GetIssues(targetMilestone);
             Append(issues, "Feature", stringBuilder);
             Append(issues, "Improvement", stringBuilder);
             Append(issues, "Bug", stringBuilder);
+        }
 
+        static void AddFooter(StringBuilder stringBuilder)
+        {
             stringBuilder.Append(@"## Where to get it
 You can download this release from:
 - Our [website](http://particular.net/downloads)
 - Or [nuget](https://www.nuget.org/profiles/nservicebus/)");
-            return stringBuilder.ToString();
         }
 
-        //async Task GetMilestones()
-        //{
-        //    var milestonesClient = gitHubClient.Issue.Milestone;
-        //    var openList = await milestonesClient.GetForRepository(user, repository, new MilestoneRequest { State = ItemState.Open });
-        //    var closedList = await milestonesClient.GetForRepository(user, repository, new MilestoneRequest { State = ItemState.Closed });
-        //    milestones = openList.Union(closedList).ToList();
-        //}
-
-        //string GetCommitsLink()
-        //{
-        //    var previousMilestone = milestones.FirstOrDefault(x => x.DueOn < targetMilestone.DueOn);
-        //    if (previousMilestone == null)
-        //    {
-        //        return string.Format("https://github.com/{0}/{1}/commits/{2}", user, repository, targetMilestone.Title);
-        //    }
-        //    return string.Format("https://github.com/{0}/{1}/compare/{2}...{3}", user, repository, previousMilestone.Title, targetMilestone.Title);
-        //}
+        async Task GetMilestones()
+        {
+            var milestonesClient = gitHubClient.Issue.Milestone;
+            var openList = await milestonesClient.GetForRepository(user, repository, new MilestoneRequest { State = ItemState.Open });
+            var closedList = await milestonesClient.GetForRepository(user, repository, new MilestoneRequest { State = ItemState.Closed });
+            milestones = openList.Union(closedList).ToList();
+        }
 
         async Task<List<Issue>> GetIssues(Milestone milestone)
         {
-            var closedIssueRequest = new RepositoryIssueRequest
-            {
-                Milestone = milestone.Number.ToString(),
-                State = ItemState.Closed
-            };
-            var openIssueRequest = new RepositoryIssueRequest
-            {
-                Milestone = milestone.Number.ToString(),
-                State = ItemState.Open
-            };
-            var closedIssues = await gitHubClient.Issue.GetForRepository(user, repository, closedIssueRequest);
-            var openIssues = await gitHubClient.Issue.GetForRepository(user, repository, openIssueRequest);
-
+            var allIssues = await gitHubClient.AllIssuesForMilestone(milestone);
             var issues = new List<Issue>();
-            foreach (var issue in openIssues.Union(closedIssues).Where(x=>!x.IsPullRequest()))
+            foreach (var issue in allIssues.Where(x=>!x.IsPullRequest()))
             {
                 CheckForValidLabels(issue);
                 issues.Add(issue);
@@ -99,11 +95,11 @@ You can download this release from:
             var count = issue.Labels.Count(l => 
                 l.Name == "Bug" || 
                 l.Name == "Internal refactoring" || 
-                l.Name == "Feature" || 
+                l.Name == "Feature" ||
                 l.Name == "Improvement");
             if (count != 1)
             {
-                var message = string.Format("Bad Issue {0} expected to find a label with either 'Bug', 'Internal refactoring', 'Improvement' or 'Feature'.", HtmlUrl(issue));
+                var message = string.Format("Bad Issue {0} expected to find a single label with either 'Bug', 'Internal refactoring', 'Improvement' or 'Feature'.", issue.HtmlUrl);
                 throw new Exception(message);
             }
         }
@@ -118,31 +114,19 @@ You can download this release from:
 
                 foreach (var issue in features)
                 {
-                    stringBuilder.AppendFormat("### [#{0} {1}]({2})\r\n\r\n{3}\r\n\r\n", issue.Number, issue.Title, HtmlUrl(issue), issue.ExtractSummary());
+                    stringBuilder.AppendFormat("### [#{0} {1}]({2})\r\n\r\n{3}\r\n\r\n", issue.Number, issue.Title, issue.HtmlUrl, issue.ExtractSummary());
                 }
                 stringBuilder.AppendLine();
             }
         }
 
-        string HtmlUrl(Issue issue)
+        void GetTargetMilestone()
         {
-//TODO: move back to HtmlUrl when https://github.com/octokit/octokit.net/issues/162 is fixed
-            //var htmlUrl = issue.HtmlUrl;
-            return string.Format("https://github.com/{0}/{1}/issues/{2}", user, repository, issue.Number);
-        }
-
-
-        async Task<Milestone> GetTargetMilestone()
-        {
-
-            var milestonesClient = gitHubClient.Issue.Milestone;
-            var openList = await milestonesClient.GetForRepository(user, repository, new MilestoneRequest { State = ItemState.Open });
-            var milestone = openList.FirstOrDefault(x => x.Title == milestoneTitle);
-            if (milestone == null)
+            targetMilestone = milestones.FirstOrDefault(x => x.Title == milestoneTitle);
+            if (targetMilestone == null)
             {
                 throw new Exception(string.Format("Could not find milestone for '{0}'.", milestoneTitle));
             }
-            return milestone;
         }
     }
 }

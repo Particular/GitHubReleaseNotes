@@ -16,6 +16,7 @@ public class ReleaseNotesBuilderTests
         Debug.WriteLine(result);
         ClipBoardHelper.SetClipboard(result);
     }
+
     [Test]
     [Explicit]
     public async void SingleMilestone2()
@@ -27,10 +28,33 @@ public class ReleaseNotesBuilderTests
         Debug.WriteLine(result);
         ClipBoardHelper.SetClipboard(result);
     }
+
     [Test]
     [Explicit]
     public void OctokitTests()
     {
         var gitHubClient = ClientBuilder.Build();
     }
+
+  
+}
+
+[TestFixture]
+public class ReleaseManagerTests
+{
+    [Test]
+    [Explicit]
+    public async void List_releases_that_needs_updates()
+    {
+        var gitHubClient = ClientBuilder.Build();
+
+        var releaseNotesBuilder = new ReleaseManager(gitHubClient, "Particular");
+        var result = await releaseNotesBuilder.GetReleasesInNeedOfUpdates();
+
+        foreach (var releaseName in result)
+        {
+            Debug.WriteLine(releaseName);
+        }
+       
+    }  
 }

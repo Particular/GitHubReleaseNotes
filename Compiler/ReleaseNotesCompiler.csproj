@@ -47,6 +47,7 @@
     <Compile Include="ReleaseManager.cs" />
     <Compile Include="ReleaseNotesBuilder.cs" />
     <Compile Include="OctokitExtensions.cs" />
+    <Compile Include="ReleaseUpdateRequired.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

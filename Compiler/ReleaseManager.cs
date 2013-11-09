@@ -18,14 +18,14 @@ namespace ReleaseNotesCompiler
             this.organization = organization;
         }
 
-        public async Task<IEnumerable<string>> GetReleasesInNeedOfUpdates()
+        public async Task<IEnumerable<ReleaseUpdateRequired>> GetReleasesInNeedOfUpdates()
         {
             var repositories = await gitHubClient.Repository.GetAllForOrg(this.organization);
 
 
-            var releases = new List<string>();
+            var releases = new List<ReleaseUpdateRequired>();
 
-            foreach (var repository in repositories.Where(r => 
+            foreach (var repository in repositories.Where(r =>
                 r.Name != "NServiceBus" &&  //until we can patch octokit
                 r.Name != "ServiceInsight" && //until we can patch octokit
                 r.HasIssues))
@@ -40,25 +40,69 @@ namespace ReleaseNotesCompiler
                 {
                     var potentialRelease = milestone.Title.Replace(" ", "");
 
-                    var rel = releasesForThisRepo.SingleOrDefault(r => r.Name == potentialRelease);
+                    var release = releasesForThisRepo.SingleOrDefault(r => r.Name == potentialRelease);
 
-                    if (rel != null)
+                    if (release != null)
                     {
-                        Console.Out.WriteLine("Release exists for milestone " + potentialRelease);
+
+                        var releaseUpdatedAt = GetUpdatedAt(release).ToUniversalTime();
+
+                        var allIssues = await gitHubClient.AllIssuesForMilestone(milestone);
+
+                        var latestIssueModification =
+                            allIssues.Where(i => i.State == ItemState.Closed).Max(i => i.ClosedAt.Value).UtcDateTime;
+
+                        Console.Out.WriteLine("Release exists for milestone {0} - Last updated at: {1}, Issues updated at:{2}", potentialRelease, releaseUpdatedAt, latestIssueModification);
+
+                        if (releaseUpdatedAt < latestIssueModification)
+                        {
+
+                            releases.Add(new ReleaseUpdateRequired
+                            {
+                                Release = release.Name,
+                                Repository = repository.Name,
+                                NeedsToBeCreated = true
+                            });
+                        }
                     }
                     else
                     {
                         Console.Out.WriteLine("No Release exists for milestone " + potentialRelease);
 
-                        releases.Add(repository.Name + " - " + potentialRelease);
+                        releases.Add(new ReleaseUpdateRequired
+                        {
+                            Release = potentialRelease,
+                            Repository = repository.Name,
+                            NeedsToBeCreated = true
+                        });
                     }
 
                 }
-                
+
 
             }
 
             return releases;
+        }
+
+        DateTime GetUpdatedAt(Release release)
+        {
+            //we try to parse our footer
+            var temp = release.Body.Split(new[] { " at " }, StringSplitOptions.RemoveEmptyEntries);
+
+            if (!temp.Any())
+            {
+                return DateTime.MinValue;
+            }
+
+            DateTime result;
+
+            if (!DateTime.TryParse(temp.Last().Split(' ').First(), out result))
+            {
+                return DateTime.MinValue;
+            }
+
+            return result;
         }
 
         async Task<List<Milestone>> GetMilestones(string repository)
@@ -67,8 +111,6 @@ namespace ReleaseNotesCompiler
             var openList = await milestonesClient.GetForRepository(organization, repository, new MilestoneRequest { State = ItemState.Open });
 
             return openList.ToList();
-            //var closedList = await milestonesClient.GetForRepository(organization, repository, new MilestoneRequest { State = ItemState.Closed });
-            //return openList.Union(closedList).ToList();
         }
     }
 }

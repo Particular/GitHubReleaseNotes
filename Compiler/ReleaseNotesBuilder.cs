@@ -44,7 +44,8 @@ namespace ReleaseNotesCompiler
         }
         string GetCommitsLink()
         {
-            var orderedMilestones = milestones.OrderByDescending(x => Version.Parse(x.Title));
+            
+            var orderedMilestones = milestones.OrderByDescending(x => x.GetVersion());
             var previousMilestone = orderedMilestones.FirstOrDefault(x => x.DueOn < targetMilestone.DueOn);
             if (previousMilestone == null)
             {

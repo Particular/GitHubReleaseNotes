@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Octokit;
 
@@ -18,9 +17,9 @@ namespace ReleaseNotesCompiler
             this.organization = organization;
         }
 
-        public async Task<IEnumerable<ReleaseUpdateRequired>> GetReleasesInNeedOfUpdates()
+        public async Task<List<ReleaseUpdateRequired>> GetReleasesInNeedOfUpdates()
         {
-            var repositories = await gitHubClient.Repository.GetAllForOrg(this.organization);
+            var repositories = await gitHubClient.Repository.GetAllForOrg(organization);
 
 
             var releases = new List<ReleaseUpdateRequired>();

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -40,11 +41,25 @@ namespace ReleaseNotesCompiler
             await AddIssues(stringBuilder);
 
             AddFooter(stringBuilder);
-            return stringBuilder.ToString();
-        }
 
+
+            var allText = stringBuilder.ToString();
+            using (var reader = new StringReader(allText))
+            {
+                while (reader.Peek() >= 0)
+                {
+                    var readLine = reader.ReadLine();
+                    if (readLine != null && readLine.StartsWith("#######"))
+                    {
+                        throw new Exception("After the issue has been nested under the top level headings a line has resulted in a 'too deep' headin level. The resulting line is \r\n"+readLine);
+                    }
+                }
+            }
+            return allText;
+        }
         string GetCommitsLink()
         {
+            
             var orderedMilestones = milestones.OrderByDescending(x => x.GetVersion());
             var previousMilestone = orderedMilestones.FirstOrDefault(x => x.DueOn < targetMilestone.DueOn);
             if (previousMilestone == null)
@@ -111,11 +126,11 @@ You can download this release from:
                 .ToList();
             if (features.Count > 0)
             {
-                stringBuilder.AppendFormat("# {0}s\r\n\r\n", label);
+                stringBuilder.AppendFormat("## {0}s\r\n\r\n", label);
 
                 foreach (var issue in features)
                 {
-                    stringBuilder.AppendFormat("## [#{0} {1}]({2})\r\n\r\n{3}\r\n\r\n", issue.Number, issue.Title, issue.HtmlUrl, issue.ExtractSummary());
+                    stringBuilder.AppendFormat("### [#{0} {1}]({2})\r\n\r\n{3}\r\n\r\n", issue.Number, issue.Title, issue.HtmlUrl, issue.ExtractSummary());
                 }
                 stringBuilder.AppendLine();
             }

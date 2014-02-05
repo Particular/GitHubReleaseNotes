@@ -120,7 +120,7 @@ namespace ReleaseNotesCompiler
                 }
                 if (!inCode && line.StartsWith("#"))
                 {
-                    yield return "###" + line;
+                    yield return "##" + line;
                 }
                 else
                 {

@@ -42,9 +42,9 @@ namespace ReleaseNotesCompiler
             AddFooter(stringBuilder);
             return stringBuilder.ToString();
         }
+
         string GetCommitsLink()
         {
-            
             var orderedMilestones = milestones.OrderByDescending(x => x.GetVersion());
             var previousMilestone = orderedMilestones.FirstOrDefault(x => x.DueOn < targetMilestone.DueOn);
             if (previousMilestone == null)
@@ -111,11 +111,11 @@ You can download this release from:
                 .ToList();
             if (features.Count > 0)
             {
-                stringBuilder.AppendFormat("## {0}s\r\n\r\n", label);
+                stringBuilder.AppendFormat("# {0}s\r\n\r\n", label);
 
                 foreach (var issue in features)
                 {
-                    stringBuilder.AppendFormat("### [#{0} {1}]({2})\r\n\r\n{3}\r\n\r\n", issue.Number, issue.Title, issue.HtmlUrl, issue.ExtractSummary());
+                    stringBuilder.AppendFormat("## [#{0} {1}]({2})\r\n\r\n{3}\r\n\r\n", issue.Number, issue.Title, issue.HtmlUrl, issue.ExtractSummary());
                 }
                 stringBuilder.AppendLine();
             }

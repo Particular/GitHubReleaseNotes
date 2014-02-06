@@ -66,19 +66,32 @@ namespace ReleaseNotesCompiler
             var builder = new StringBuilder();
             if (lines.Any(x => x.StartsWith("--")))
             {
+                var previousIsCode = false;
                 var previousIsEmpty = true;
+                var inCode = false;
                 foreach (var line in lines)
                 {
-                    if (previousIsEmpty)
+                    if (line.StartsWith("```"))
                     {
-                        if (line == "--")
+                        previousIsCode = inCode;
+                        inCode = !inCode;
+                    }
+                    if (!inCode)
+                    {
+                        if (previousIsEmpty || previousIsCode)
                         {
-                            break;
+                            if (line == "--")
+                            {
+                                break;
+                            }
                         }
                     }
+
+
                     builder.AppendLine(line);
 
                     previousIsEmpty = string.IsNullOrWhiteSpace(line);
+
                 }
             }
             else

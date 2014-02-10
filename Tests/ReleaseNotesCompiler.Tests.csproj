@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClipBoardHelper.cs" />
+    <Compile Include="Helper.cs" />
     <Compile Include="ReleaseManagerTests.cs" />
     <Compile Include="ReleaseNotesBuilderTests.cs" />
     <Compile Include="ClientBuilder.cs" />

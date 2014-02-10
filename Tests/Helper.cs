@@ -1,42 +1,48 @@
-﻿using System;
-using System.Net;
-using Octokit;
-
-public static class Helper
+﻿namespace ReleaseNotesCompiler.Tests
 {
-    // From https://github.com/octokit/octokit.net/blob/master/Octokit.Tests.Integration/Helper.cs
+    using System;
+    using System.Net;
+    using Octokit;
 
-    static readonly Lazy<Credentials> _credentialsThunk = new Lazy<Credentials>(() =>
+    public static class Helper
     {
-        var githubUsername = Environment.GetEnvironmentVariable("OCTOKIT_GITHUBUSERNAME");
+        // From https://github.com/octokit/octokit.net/blob/master/Octokit.Tests.Integration/Helper.cs
 
-        var githubToken = Environment.GetEnvironmentVariable("OCTOKIT_OAUTHTOKEN");
-
-        if (githubToken != null)
-            return new Credentials(githubToken);
-
-        var githubPassword = Environment.GetEnvironmentVariable("OCTOKIT_GITHUBPASSWORD");
-
-        if (githubUsername == null || githubPassword == null)
-            return Credentials.Anonymous;
-
-        return new Credentials(githubUsername, githubPassword);
-    });
-
-    public static Credentials Credentials { get { return _credentialsThunk.Value; } }
-
-    public static IWebProxy Proxy
-    {
-        get
+        static readonly Lazy<Credentials> _credentialsThunk = new Lazy<Credentials>(() =>
         {
-            return null;
-            /*
-                            return new WebProxy(
-                                new System.Uri("http://myproxy:42"),
-                                true,
-                                new string[] {},
-                                new NetworkCredential(@"domain\login", "password"));
-            */
+            var githubUsername = Environment.GetEnvironmentVariable("OCTOKIT_GITHUBUSERNAME");
+
+            var githubToken = Environment.GetEnvironmentVariable("OCTOKIT_OAUTHTOKEN");
+
+            if (githubToken != null)
+                return new Credentials(githubToken);
+
+            var githubPassword = Environment.GetEnvironmentVariable("OCTOKIT_GITHUBPASSWORD");
+
+            if (githubUsername == null || githubPassword == null)
+                return Credentials.Anonymous;
+
+            return new Credentials(githubUsername, githubPassword);
+        });
+
+        public static Credentials Credentials
+        {
+            get { return _credentialsThunk.Value; }
+        }
+
+        public static IWebProxy Proxy
+        {
+            get
+            {
+                return null;
+/*
+                return new WebProxy(
+                    new System.Uri("http://myproxy:42"),
+                    true,
+                    new string[] {},
+                    new NetworkCredential(@"domain\login", "password"));
+*/
+            }
         }
     }
 }

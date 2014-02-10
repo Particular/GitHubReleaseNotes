@@ -1,7 +1,9 @@
-﻿using System.Threading;
-using System.Windows.Forms;
+﻿namespace ReleaseNotesCompiler.Tests
+{
+    using System.Threading;
+    using System.Windows.Forms;
 
-class ClipBoardHelper
+    class ClipBoardHelper
     {
         public static void SetClipboard(string result)
         {
@@ -11,3 +13,4 @@ class ClipBoardHelper
             thread.Join();
         }
     }
+}

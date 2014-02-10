@@ -1,24 +1,27 @@
-﻿using System.Net.Http.Headers;
-using Octokit;
-using Octokit.Internal;
-
-public static class ClientBuilder
+﻿namespace ReleaseNotesCompiler.Tests
 {
-    public static GitHubClient Build()
+    using System.Net.Http.Headers;
+    using Octokit;
+    using Octokit.Internal;
+
+    public static class ClientBuilder
     {
-        var credentialStore = new InMemoryCredentialStore(Helper.Credentials);
+        public static GitHubClient Build()
+        {
+            var credentialStore = new InMemoryCredentialStore(Helper.Credentials);
 
-        var httpClient = new HttpClientAdapter(Helper.Proxy);
+            var httpClient = new HttpClientAdapter(Helper.Proxy);
 
-        var connection = new Connection(
-            new ProductHeaderValue("ReleaseNotesCompiler"),
-            GitHubClient.GitHubApiUrl,
-            credentialStore,
-            httpClient,
-            new SimpleJsonSerializer());
+            var connection = new Connection(
+                new ProductHeaderValue("ReleaseNotesCompiler"),
+                GitHubClient.GitHubApiUrl,
+                credentialStore,
+                httpClient,
+                new SimpleJsonSerializer());
 
-        var client = new GitHubClient(connection);
+            var client = new GitHubClient(connection);
 
-        return client;
+            return client;
+        }
     }
 }

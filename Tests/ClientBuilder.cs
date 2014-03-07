@@ -1,6 +1,5 @@
 ﻿namespace ReleaseNotesCompiler.Tests
 {
-    using System.Net.Http.Headers;
     using Octokit;
     using Octokit.Internal;
 
@@ -19,9 +18,7 @@
                 httpClient,
                 new SimpleJsonSerializer());
 
-            var client = new GitHubClient(connection);
-
-            return client;
+            return new GitHubClient(connection);
         }
     }
 }

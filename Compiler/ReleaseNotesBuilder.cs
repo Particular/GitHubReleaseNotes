@@ -67,9 +67,6 @@ namespace ReleaseNotesCompiler
 
             await AddIssues(stringBuilder, notes);
 
-            // footer should be added to template later
-            AddFooter(stringBuilder);
-
             var allText = stringBuilder.ToString();
             
             using (var reader = new StringReader(allText))
@@ -85,10 +82,8 @@ namespace ReleaseNotesCompiler
             }
 
             notes.__allText = allText;
-
-            var behaviour = new RenderContextBehaviour();
             
-            var markdown = Render.FileToString(@".\templates\particular.md.template", notes, behaviour);
+            var markdown = Render.FileToString(@".\templates\particular.md.template", notes);
 
             return markdown;
         }
@@ -112,14 +107,6 @@ namespace ReleaseNotesCompiler
             Append(issues, "Feature", stringBuilder, notes);
             Append(issues, "Improvement", stringBuilder, notes);
             Append(issues, "Bug", stringBuilder, notes);
-        }
-
-        static void AddFooter(StringBuilder stringBuilder)
-        {
-            stringBuilder.Append(@"## Where to get it
-You can download this release from:
-- Our [website](http://particular.net/downloads)
-- Or [nuget](https://www.nuget.org/profiles/nservicebus/)");
         }
 
         async Task GetMilestones()

@@ -49,12 +49,19 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClipBoardHelper.cs" />
+    <Compile Include="ReleaseNotesBuilderTests_TemplatesBased.cs" />
     <Compile Include="Helper.cs" />
     <Compile Include="ReleaseManagerTests.cs" />
     <Compile Include="ReleaseNotesBuilderTests.cs" />
     <Compile Include="ClientBuilder.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="templateSupport\singleMilestone3.md">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="templateSupport\singleMilestone.md">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>

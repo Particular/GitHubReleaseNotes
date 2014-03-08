@@ -57,14 +57,6 @@ namespace ReleaseNotesCompiler
             notes.commitsLink = GetCommitsLink();
             notes.targetMilestoneHtmlUrl = targetMilestone.HtmlUrl();
 
-            stringBuilder.AppendFormat(
-                @"This release consist of [these issues]({0}) that were achieved through [these commits]({1}).", 
-                notes.targetMilestoneHtmlUrl, notes.commitsLink);
-            stringBuilder.AppendLine();
-
-            stringBuilder.AppendLine(targetMilestone.Description);
-            stringBuilder.AppendLine();
-
             await AddIssues(stringBuilder, notes);
 
             var allText = stringBuilder.ToString();

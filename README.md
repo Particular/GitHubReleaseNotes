@@ -1,7 +1,7 @@
 ReleaseNotesCompiler
 ====================
 
-In order to improve the quality for our release notes we'll generate them based on the relevant github issues.
+In order to improve the quality for our release notes we'll generate them based on the relevant Github issues.
 
 ### Conventions
 
@@ -11,7 +11,7 @@ In order to improve the quality for our release notes we'll generate them based 
 * Milestones are named {major.minor.patch}
 * Version is picked up from the build number (GFV) and that info is used to find the milestone
 * We'll generate release notes as markdown for display on the website
-* by default only the first 30 line of an issue description is included in the release noted. If you want to control exactly how many lines are included then use a `--` to add a horizontal rule. Then only the contents above that horizontal rule will be included.
+* by default only the first 30 line of an issue description is included in the release notes. If you want to control exactly how many lines are included then use a `--` to add a horizontal rule. Then only the contents above that horizontal rule will be included.
 
 ### Plans
 
@@ -21,5 +21,6 @@ In order to improve the quality for our release notes we'll generate them based 
 * Want to be able to output in a manner compatible with http://www.semanticreleasenotes.org/
 * We'll generate release notes as X for inclusion in our nugets
 * For each milestone a corresponding GitHub release will be created with the same name and set to tag master with the same tag when published
+* Use template instead of raw `stringBuilder.AppenFormat(...);`
 
 

@@ -56,6 +56,9 @@
   <ItemGroup>
     <None Include="Fody.targets" />
     <None Include="packages.config" />
+    <None Include="templates\particular.md.template">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="FodyWeavers.xml" />

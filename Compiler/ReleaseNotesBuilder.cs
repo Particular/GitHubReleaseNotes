@@ -8,12 +8,17 @@ using Octokit;
 
 namespace ReleaseNotesCompiler
 {
+    using Nustache.Core;
+
     internal class ReleaseNotes
     {
         public string milestoneTitle;
         public Milestone targetMilestone;
         public string commitsLink;
         public string targetMilestoneHtmlUrl;
+
+        // temp field used while migrating to template based approach
+        public string __allText;
 
         Dictionary<string, Issue[]> _issuesByCategory = new Dictionary<string, Issue[]>();
 
@@ -67,7 +72,6 @@ namespace ReleaseNotesCompiler
 
             var allText = stringBuilder.ToString();
             
-            
             using (var reader = new StringReader(allText))
             {
                 while (reader.Peek() >= 0)
@@ -79,7 +83,14 @@ namespace ReleaseNotesCompiler
                     }
                 }
             }
-            return allText;
+
+            notes.__allText = allText;
+
+            var behaviour = new RenderContextBehaviour();
+            
+            var markdown = Render.FileToString(@".\templates\particular.md.template", notes, behaviour);
+
+            return markdown;
         }
 
         string GetCommitsLink()

@@ -8,21 +8,38 @@ using Octokit;
 
 namespace ReleaseNotesCompiler
 {
+    internal class ReleaseNotes
+    {
+        public string milestoneTitle;
+        public Milestone targetMilestone;
+        public string commitsLink;
+        public string targetMilestoneHtmlUrl;
+
+        Dictionary<string, Issue[]> _issuesByCategory = new Dictionary<string, Issue[]>();
+
+        public void AddIssue(string label, Issue[] issues)
+        {
+            _issuesByCategory.Add(label, issues);
+        }
+    }
+
     public class ReleaseNotesBuilder
     {
         GitHubClient gitHubClient;
         string user;
         string repository;
-        string milestoneTitle;
+
         List<Milestone> milestones;
         Milestone targetMilestone;
+
+        ReleaseNotes notes;
 
         public ReleaseNotesBuilder(GitHubClient gitHubClient, string user, string repository, string milestoneTitle)
         {
             this.gitHubClient = gitHubClient;
             this.user = user;
             this.repository = repository;
-            this.milestoneTitle = milestoneTitle;
+            notes = new ReleaseNotes() { milestoneTitle = milestoneTitle };
         }
 
         public async Task<string> BuildReleaseNotes()
@@ -30,20 +47,27 @@ namespace ReleaseNotesCompiler
             await GetMilestones();
 
             var stringBuilder = new StringBuilder();
-            GetTargetMilestone();
-            var commitsLink = GetCommitsLink();
-            stringBuilder.AppendFormat(@"This release consist of [these issues]({0}) that were achieved through [these commits]({1}).", targetMilestone.HtmlUrl(),commitsLink);
+
+            notes.targetMilestone = GetTargetMilestone(notes.milestoneTitle);
+            notes.commitsLink = GetCommitsLink();
+            notes.targetMilestoneHtmlUrl = targetMilestone.HtmlUrl();
+
+            stringBuilder.AppendFormat(
+                @"This release consist of [these issues]({0}) that were achieved through [these commits]({1}).", 
+                notes.targetMilestoneHtmlUrl, notes.commitsLink);
             stringBuilder.AppendLine();
 
             stringBuilder.AppendLine(targetMilestone.Description);
             stringBuilder.AppendLine();
 
-            await AddIssues(stringBuilder);
+            await AddIssues(stringBuilder, notes);
 
+            // footer should be added to template later
             AddFooter(stringBuilder);
 
-
             var allText = stringBuilder.ToString();
+            
+            
             using (var reader = new StringReader(allText))
             {
                 while (reader.Peek() >= 0)
@@ -51,15 +75,16 @@ namespace ReleaseNotesCompiler
                     var readLine = reader.ReadLine();
                     if (readLine != null && readLine.StartsWith("#######"))
                     {
-                        throw new Exception("After the issue has been nested under the top level headings a line has resulted in a 'too deep' headin level. The resulting line is \r\n"+readLine);
+                        throw new Exception("After the issue has been nested under the top level headings a line has resulted in a 'too deep' headin level. The resulting line is \r\n" + readLine);
                     }
                 }
             }
             return allText;
         }
+
         string GetCommitsLink()
         {
-            
+
             var orderedMilestones = milestones.OrderByDescending(x => x.GetVersion());
             var previousMilestone = orderedMilestones.FirstOrDefault(x => x.DueOn < targetMilestone.DueOn);
             if (previousMilestone == null)
@@ -70,12 +95,12 @@ namespace ReleaseNotesCompiler
         }
 
 
-        async Task AddIssues(StringBuilder stringBuilder)
+        async Task AddIssues(StringBuilder stringBuilder, ReleaseNotes notes)
         {
             var issues = await GetIssues(targetMilestone);
-            Append(issues, "Feature", stringBuilder);
-            Append(issues, "Improvement", stringBuilder);
-            Append(issues, "Bug", stringBuilder);
+            Append(issues, "Feature", stringBuilder, notes);
+            Append(issues, "Improvement", stringBuilder, notes);
+            Append(issues, "Bug", stringBuilder, notes);
         }
 
         static void AddFooter(StringBuilder stringBuilder)
@@ -98,7 +123,7 @@ You can download this release from:
         {
             var allIssues = await gitHubClient.AllIssuesForMilestone(milestone);
             var issues = new List<Issue>();
-            foreach (var issue in allIssues.Where(x=>!x.IsPullRequest()))
+            foreach (var issue in allIssues.Where(x => !x.IsPullRequest()))
             {
                 CheckForValidLabels(issue);
                 issues.Add(issue);
@@ -108,9 +133,9 @@ You can download this release from:
 
         void CheckForValidLabels(Issue issue)
         {
-            var count = issue.Labels.Count(l => 
-                l.Name == "Bug" || 
-                l.Name == "Internal refactoring" || 
+            var count = issue.Labels.Count(l =>
+                l.Name == "Bug" ||
+                l.Name == "Internal refactoring" ||
                 l.Name == "Feature" ||
                 l.Name == "Improvement");
             if (count != 1)
@@ -120,29 +145,37 @@ You can download this release from:
             }
         }
 
-        void Append(IEnumerable<Issue> issues, string label, StringBuilder stringBuilder)
+        void Append(IEnumerable<Issue> issues, string label, StringBuilder stringBuilder, ReleaseNotes notes)
         {
             var features = issues.Where(x => x.Labels.Any(l => l.Name == label))
-                .ToList();
-            if (features.Count > 0)
+                .ToArray();
+
+            notes.AddIssue(label, features);
+
+            if (features.Any())
             {
                 stringBuilder.AppendFormat("## {0}s\r\n\r\n", label);
 
                 foreach (var issue in features)
                 {
-                    stringBuilder.AppendFormat("### [#{0} {1}]({2})\r\n\r\n{3}\r\n\r\n", issue.Number, issue.Title, issue.HtmlUrl, issue.ExtractSummary());
+                    // if we cannot use extensio methods in template, 
+                    // we should consider creating our own issue class
+                    stringBuilder.AppendFormat(
+                        "### [#{0} {1}]({2})\r\n\r\n{3}\r\n\r\n", 
+                        issue.Number, issue.Title, issue.HtmlUrl, issue.ExtractSummary());
                 }
                 stringBuilder.AppendLine();
             }
         }
 
-        void GetTargetMilestone()
+        Milestone GetTargetMilestone(string milestoneTitle)
         {
             targetMilestone = milestones.FirstOrDefault(x => x.Title == milestoneTitle);
             if (targetMilestone == null)
             {
                 throw new Exception(string.Format("Could not find milestone for '{0}'.", milestoneTitle));
             }
+            return targetMilestone;
         }
     }
 }

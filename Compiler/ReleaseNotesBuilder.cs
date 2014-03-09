@@ -8,7 +8,6 @@ using Nustache.Core;
 
 namespace ReleaseNotesCompiler
 {
-
     public class ReleaseNotesBuilder
     {
         GitHubClient gitHubClient;
@@ -16,7 +15,6 @@ namespace ReleaseNotesCompiler
         string repository;
 
         List<Milestone> milestones;
-        Milestone targetMilestone;
 
         ReleaseNotes notes;
         List<Issue> _issues;
@@ -46,11 +44,55 @@ namespace ReleaseNotesCompiler
             return markdown;
         }
 
+        async Task GetMilestones()
+        {
+            var milestonesClient = gitHubClient.Issue.Milestone;
+            var openList = await milestonesClient.GetForRepository(user, repository, new MilestoneRequest { State = ItemState.Open });
+            var closedList = await milestonesClient.GetForRepository(user, repository, new MilestoneRequest { State = ItemState.Closed });
+            milestones = openList.Union(closedList).ToList();
+        }
+
+        async Task GetIssues()
+        {
+            _issues = await GetIssues(notes.targetMilestone);
+        }
+
+        async Task<List<Issue>> GetIssues(Milestone milestone)
+        {
+            var allIssues = await gitHubClient.AllIssuesForMilestone(milestone);
+            var issues = new List<Issue>();
+            foreach (var issue in allIssues.Where(x => !x.IsPullRequest()))
+            {
+                CheckForValidLabels(issue);
+                issues.Add(issue);
+            }
+            return issues;
+        }
+
+        void SetMilestoneData()
+        {
+            notes.targetMilestone = GetTargetMilestone(notes.milestoneTitle);
+            notes.commitsLink = GetCommitsLink();
+            notes.targetMilestoneHtmlUrl = notes.targetMilestone.HtmlUrl();
+        }
+
         void SetIssueData()
         {
             Append(_issues, "Feature");
             Append(_issues, "Improvement");
             Append(_issues, "Bug");
+        }
+
+        void Append(IEnumerable<Issue> issues, string label)
+        {
+            var features = issues.Where(x => x.Labels.Any(l => l.Name == label))
+                .ToArray();
+
+            if (features.Any())
+            {
+                notes.AddIssue(label, 
+                    features.Select(f => new IssueWrapper(f)).ToArray());
+            }
         }
 
         static void ValidMarkdownOrThrow(string markdown)
@@ -68,48 +110,16 @@ namespace ReleaseNotesCompiler
             }
         }
 
-        void SetMilestoneData()
-        {
-            notes.targetMilestone = GetTargetMilestone(notes.milestoneTitle);
-            notes.commitsLink = GetCommitsLink();
-            notes.targetMilestoneHtmlUrl = targetMilestone.HtmlUrl();
-        }
-
         string GetCommitsLink()
         {
 
             var orderedMilestones = milestones.OrderByDescending(x => x.GetVersion());
-            var previousMilestone = orderedMilestones.FirstOrDefault(x => x.DueOn < targetMilestone.DueOn);
+            var previousMilestone = orderedMilestones.FirstOrDefault(x => x.DueOn < notes.targetMilestone.DueOn);
             if (previousMilestone == null)
             {
-                return string.Format("https://github.com/{0}/{1}/commits/{2}", user, repository, targetMilestone.Title);
+                return string.Format("https://github.com/{0}/{1}/commits/{2}", user, repository, notes.targetMilestone.Title);
             }
-            return string.Format("https://github.com/{0}/{1}/compare/{2}...{3}", user, repository, previousMilestone.Title, targetMilestone.Title);
-        }
-
-        async Task GetIssues()
-        {
-            _issues = await GetIssues(targetMilestone);
-        }
-
-        async Task GetMilestones()
-        {
-            var milestonesClient = gitHubClient.Issue.Milestone;
-            var openList = await milestonesClient.GetForRepository(user, repository, new MilestoneRequest { State = ItemState.Open });
-            var closedList = await milestonesClient.GetForRepository(user, repository, new MilestoneRequest { State = ItemState.Closed });
-            milestones = openList.Union(closedList).ToList();
-        }
-
-        async Task<List<Issue>> GetIssues(Milestone milestone)
-        {
-            var allIssues = await gitHubClient.AllIssuesForMilestone(milestone);
-            var issues = new List<Issue>();
-            foreach (var issue in allIssues.Where(x => !x.IsPullRequest()))
-            {
-                CheckForValidLabels(issue);
-                issues.Add(issue);
-            }
-            return issues;
+            return string.Format("https://github.com/{0}/{1}/compare/{2}...{3}", user, repository, previousMilestone.Title, notes.targetMilestone.Title);
         }
 
         void CheckForValidLabels(Issue issue)
@@ -126,21 +136,9 @@ namespace ReleaseNotesCompiler
             }
         }
 
-        void Append(IEnumerable<Issue> issues, string label)
-        {
-            var features = issues.Where(x => x.Labels.Any(l => l.Name == label))
-                .ToArray();
-
-            if (features.Any())
-            {
-                notes.AddIssue(label, 
-                    features.Select(f => new IssueWrapper(f)).ToArray());
-            }
-        }
-
         Milestone GetTargetMilestone(string milestoneTitle)
         {
-            targetMilestone = milestones.FirstOrDefault(x => x.Title == milestoneTitle);
+            var targetMilestone = milestones.FirstOrDefault(x => x.Title == milestoneTitle);
             if (targetMilestone == null)
             {
                 throw new Exception(string.Format("Could not find milestone for '{0}'.", milestoneTitle));

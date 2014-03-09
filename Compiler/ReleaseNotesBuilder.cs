@@ -9,7 +9,6 @@ using Nustache.Core;
 namespace ReleaseNotesCompiler
 {
 
-
     public class ReleaseNotesBuilder
     {
         GitHubClient gitHubClient;
@@ -20,6 +19,7 @@ namespace ReleaseNotesCompiler
         Milestone targetMilestone;
 
         ReleaseNotes notes;
+        List<Issue> _issues;
 
         public ReleaseNotesBuilder(GitHubClient gitHubClient, string user, string repository, string milestoneTitle)
         {
@@ -33,14 +33,28 @@ namespace ReleaseNotesCompiler
         {
             await GetMilestones();
 
-            notes.targetMilestone = GetTargetMilestone(notes.milestoneTitle);
-            notes.commitsLink = GetCommitsLink();
-            notes.targetMilestoneHtmlUrl = targetMilestone.HtmlUrl();
+            SetMilestoneData();
 
-            await AddIssues(notes);
+            await GetIssues();
+
+            SetIssueData();
 
             var markdown = Render.FileToString(@".\templates\particular.md.template", notes);
 
+            ValidMarkdownOrThrow(markdown);
+
+            return markdown;
+        }
+
+        void SetIssueData()
+        {
+            Append(_issues, "Feature");
+            Append(_issues, "Improvement");
+            Append(_issues, "Bug");
+        }
+
+        static void ValidMarkdownOrThrow(string markdown)
+        {
             using (var reader = new StringReader(markdown))
             {
                 while (reader.Peek() >= 0)
@@ -52,8 +66,13 @@ namespace ReleaseNotesCompiler
                     }
                 }
             }
+        }
 
-            return markdown;
+        void SetMilestoneData()
+        {
+            notes.targetMilestone = GetTargetMilestone(notes.milestoneTitle);
+            notes.commitsLink = GetCommitsLink();
+            notes.targetMilestoneHtmlUrl = targetMilestone.HtmlUrl();
         }
 
         string GetCommitsLink()
@@ -68,13 +87,9 @@ namespace ReleaseNotesCompiler
             return string.Format("https://github.com/{0}/{1}/compare/{2}...{3}", user, repository, previousMilestone.Title, targetMilestone.Title);
         }
 
-
-        async Task AddIssues(ReleaseNotes notes)
+        async Task GetIssues()
         {
-            var issues = await GetIssues(targetMilestone);
-            Append(issues, "Feature", notes);
-            Append(issues, "Improvement", notes);
-            Append(issues, "Bug", notes);
+            _issues = await GetIssues(targetMilestone);
         }
 
         async Task GetMilestones()
@@ -111,7 +126,7 @@ namespace ReleaseNotesCompiler
             }
         }
 
-        void Append(IEnumerable<Issue> issues, string label, ReleaseNotes notes)
+        void Append(IEnumerable<Issue> issues, string label)
         {
             var features = issues.Where(x => x.Labels.Any(l => l.Name == label))
                 .ToArray();
@@ -133,6 +148,7 @@ namespace ReleaseNotesCompiler
             return targetMilestone;
         }
 
+        #region release note and issue data classes
         internal class ReleaseNotes
         {
             public string milestoneTitle;
@@ -168,5 +184,6 @@ namespace ReleaseNotesCompiler
                 get { return issue.ExtractSummary(); }
             }
         }
+        #endregion
     }
 }

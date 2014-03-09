@@ -2,52 +2,13 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Octokit;
+using Nustache.Core;
 
 namespace ReleaseNotesCompiler
 {
-    using Nustache.Core;
 
-    internal class ReleaseNotes
-    {
-        public string milestoneTitle;
-        public Milestone targetMilestone;
-        public string commitsLink;
-        public string targetMilestoneHtmlUrl;
-
-        // temp field used while migrating to template based approach
-        public string __allText;
-
-        public List<IssueGroup> issuesByLabel = new List<IssueGroup>();
-
-        public void AddIssue(string label, IssueWrapper[] issues)
-        {
-            issuesByLabel.Add(new IssueGroup { label=label, issues=issues});
-        }
-    }
-
-    internal class IssueGroup
-    {
-        public string label;
-        public IssueWrapper[] issues;
-    }
-
-    internal class IssueWrapper
-    {
-        public readonly Issue issue;
-
-        public IssueWrapper(Issue issue)
-        {
-            this.issue = issue;
-        }
-
-        public string summary 
-        {
-            get { return issue.ExtractSummary(); }
-        }
-    }
 
     public class ReleaseNotesBuilder
     {
@@ -72,17 +33,15 @@ namespace ReleaseNotesCompiler
         {
             await GetMilestones();
 
-            var stringBuilder = new StringBuilder();
-
             notes.targetMilestone = GetTargetMilestone(notes.milestoneTitle);
             notes.commitsLink = GetCommitsLink();
             notes.targetMilestoneHtmlUrl = targetMilestone.HtmlUrl();
 
-            await AddIssues(stringBuilder, notes);
+            await AddIssues(notes);
 
-            var allText = stringBuilder.ToString();
-            
-            using (var reader = new StringReader(allText))
+            var markdown = Render.FileToString(@".\templates\particular.md.template", notes);
+
+            using (var reader = new StringReader(markdown))
             {
                 while (reader.Peek() >= 0)
                 {
@@ -93,10 +52,6 @@ namespace ReleaseNotesCompiler
                     }
                 }
             }
-
-            notes.__allText = allText;
-            
-            var markdown = Render.FileToString(@".\templates\particular.md.template", notes);
 
             return markdown;
         }
@@ -114,12 +69,12 @@ namespace ReleaseNotesCompiler
         }
 
 
-        async Task AddIssues(StringBuilder stringBuilder, ReleaseNotes notes)
+        async Task AddIssues(ReleaseNotes notes)
         {
             var issues = await GetIssues(targetMilestone);
-            Append(issues, "Feature", stringBuilder, notes);
-            Append(issues, "Improvement", stringBuilder, notes);
-            Append(issues, "Bug", stringBuilder, notes);
+            Append(issues, "Feature", notes);
+            Append(issues, "Improvement", notes);
+            Append(issues, "Bug", notes);
         }
 
         async Task GetMilestones()
@@ -156,7 +111,7 @@ namespace ReleaseNotesCompiler
             }
         }
 
-        void Append(IEnumerable<Issue> issues, string label, StringBuilder stringBuilder, ReleaseNotes notes)
+        void Append(IEnumerable<Issue> issues, string label, ReleaseNotes notes)
         {
             var features = issues.Where(x => x.Labels.Any(l => l.Name == label))
                 .ToArray();
@@ -176,6 +131,42 @@ namespace ReleaseNotesCompiler
                 throw new Exception(string.Format("Could not find milestone for '{0}'.", milestoneTitle));
             }
             return targetMilestone;
+        }
+
+        internal class ReleaseNotes
+        {
+            public string milestoneTitle;
+            public Milestone targetMilestone;
+            public string commitsLink;
+            public string targetMilestoneHtmlUrl;
+
+            public List<IssueGroup> issuesByLabel = new List<IssueGroup>();
+
+            public void AddIssue(string label, IssueWrapper[] issues)
+            {
+                issuesByLabel.Add(new IssueGroup { label = label, issues = issues });
+            }
+        }
+
+        internal class IssueGroup
+        {
+            public string label;
+            public IssueWrapper[] issues;
+        }
+
+        internal class IssueWrapper
+        {
+            public readonly Issue issue;
+
+            public IssueWrapper(Issue issue)
+            {
+                this.issue = issue;
+            }
+
+            public string summary
+            {
+                get { return issue.ExtractSummary(); }
+            }
         }
     }
 }

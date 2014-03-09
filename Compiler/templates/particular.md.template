@@ -12,7 +12,7 @@ This release consist of [these issues]({{{targetMilestoneHtmlUrl}}}) that were a
 {{/issues}}
 {{/issuesByLabel}}
 
-{{{__allText}}}## Where to get it
+## Where to get it
 You can download this release from:
 - Our [website](http://particular.net/downloads)
 - Or [nuget](https://www.nuget.org/profiles/nservicebus/)

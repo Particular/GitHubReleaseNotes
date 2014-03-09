@@ -6,8 +6,8 @@
     using ReleaseNotesCompiler;
 
     /// <summary>
-    /// Tests to make sure that the templates based replacement matche the current implementation.
-    /// Once the template-based implementation is the only chosen as the default implementation,
+    /// Tests to make sure that the templates based replacement matches the current implementation exactly.
+    /// Once the template-based implementation is the chosen as the only implementation,
     /// we should delete these tests as well as the Markdown files in `templateSupport`.
     /// </summary>
     [TestFixture]

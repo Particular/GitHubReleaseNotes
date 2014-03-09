@@ -20,11 +20,32 @@ namespace ReleaseNotesCompiler
         // temp field used while migrating to template based approach
         public string __allText;
 
-        Dictionary<string, Issue[]> _issuesByCategory = new Dictionary<string, Issue[]>();
+        public List<IssueGroup> issuesByLabel = new List<IssueGroup>();
 
-        public void AddIssue(string label, Issue[] issues)
+        public void AddIssue(string label, IssueWrapper[] issues)
         {
-            _issuesByCategory.Add(label, issues);
+            issuesByLabel.Add(new IssueGroup { label=label, issues=issues});
+        }
+    }
+
+    internal class IssueGroup
+    {
+        public string label;
+        public IssueWrapper[] issues;
+    }
+
+    internal class IssueWrapper
+    {
+        public readonly Issue issue;
+
+        public IssueWrapper(Issue issue)
+        {
+            this.issue = issue;
+        }
+
+        public string summary 
+        {
+            get { return issue.ExtractSummary(); }
         }
     }
 
@@ -140,21 +161,10 @@ namespace ReleaseNotesCompiler
             var features = issues.Where(x => x.Labels.Any(l => l.Name == label))
                 .ToArray();
 
-            notes.AddIssue(label, features);
-
             if (features.Any())
             {
-                stringBuilder.AppendFormat("## {0}s\r\n\r\n", label);
-
-                foreach (var issue in features)
-                {
-                    // if we cannot use extensio methods in template, 
-                    // we should consider creating our own issue class
-                    stringBuilder.AppendFormat(
-                        "### [#{0} {1}]({2})\r\n\r\n{3}\r\n\r\n", 
-                        issue.Number, issue.Title, issue.HtmlUrl, issue.ExtractSummary());
-                }
-                stringBuilder.AppendLine();
+                notes.AddIssue(label, 
+                    features.Select(f => new IssueWrapper(f)).ToArray());
             }
         }
 

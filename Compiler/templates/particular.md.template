@@ -1,5 +1,16 @@
 This release consist of [these issues]({{{targetMilestoneHtmlUrl}}}) that were achieved through [these commits]({{{commitsLink}}}).
 {{{targetMilestone.Description}}}
+{{#issuesByLabel}}
+
+## {{label}}s
+
+{{#issues}}
+{{#issue}}### [#{{Number}} {{{Title}}}]({{{HtmlUrl}}}){{/issue}}
+
+{{{summary}}}
+
+{{/issues}}
+{{/issuesByLabel}}
 
 {{{__allText}}}## Where to get it
 You can download this release from:

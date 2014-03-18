@@ -43,19 +43,7 @@ namespace ReleaseNotesCompiler
             AddFooter(stringBuilder);
 
 
-            var allText = stringBuilder.ToString();
-            using (var reader = new StringReader(allText))
-            {
-                while (reader.Peek() >= 0)
-                {
-                    var readLine = reader.ReadLine();
-                    if (readLine != null && readLine.StartsWith("#######"))
-                    {
-                        throw new Exception("After the issue has been nested under the top level headings a line has resulted in a 'too deep' headin level. The resulting line is \r\n"+readLine);
-                    }
-                }
-            }
-            return allText;
+            return stringBuilder.ToString();
         }
         string GetCommitsLink()
         {
@@ -98,7 +86,7 @@ You can download this release from:
         {
             var allIssues = await gitHubClient.AllIssuesForMilestone(milestone);
             var issues = new List<Issue>();
-            foreach (var issue in allIssues.Where(x=>!x.IsPullRequest()))
+            foreach (var issue in allIssues.Where(x=>!x.IsPullRequest() && x.State == ItemState.Closed))
             {
                 CheckForValidLabels(issue);
                 issues.Add(issue);

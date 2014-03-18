@@ -48,13 +48,13 @@ namespace ReleaseNotesCompiler
 
             if (!Version.TryParse(nameWithoutPrerelease, out parsedVersion))
             {
-                return new Version(0,0);
+                return new Version(0, 0);
             }
 
             return parsedVersion;
         }
 
-        
+
         public static string ExtractSummary(this Issue issue)
         {
             IEnumerable<string> lines = issue.Body.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
@@ -118,6 +118,13 @@ namespace ReleaseNotesCompiler
                     count++;
                 }
             }
+
+            var result = builder.ToString();
+
+            if (result.Contains("#######"))
+            {
+                throw new Exception("After the issue has been nested under the top level headings a line has resulted in a 'too deep' headin level. Issue: " + issue.HtmlUrl);
+            }
             return builder.ToString();
         }
 
@@ -137,7 +144,7 @@ namespace ReleaseNotesCompiler
                 }
                 else
                 {
-                    yield return line;    
+                    yield return line;
                 }
             }
         }

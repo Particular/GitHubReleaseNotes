@@ -29,16 +29,24 @@ namespace ReleaseNotesCompiler
         {
             await GetMilestones();
 
-            var stringBuilder = new StringBuilder();
             GetTargetMilestone();
-            var commitsLink = GetCommitsLink();
-            stringBuilder.AppendFormat(@"This release consist of [these issues]({0}) that were achieved through [these commits]({1}).", targetMilestone.HtmlUrl(),commitsLink);
+            var issues = await GetIssues(targetMilestone);
+            var stringBuilder = new StringBuilder();
+            var previousMilestone = GetPreviousMilestone();
+
+            var numberOfCommits = GetNumberOfCommits(previousMilestone);
+            var commitsLink = GetCommitsLink(previousMilestone);
+
+            var commitsText = String.Format(numberOfCommits > 1 ? "{0} commits" : "{0} commit", numberOfCommits);
+            var issuesText = String.Format(issues.Count > 1 ? "{0} issues" : "{0} issue", issues.Count);
+
+            stringBuilder.AppendFormat(@"As part of this release we had [{0}]({1}) which resulted in [{2}]({3}) being closed.", commitsText, commitsLink, issuesText, targetMilestone.HtmlUrl());
             stringBuilder.AppendLine();
 
             stringBuilder.AppendLine(targetMilestone.Description);
             stringBuilder.AppendLine();
 
-            await AddIssues(stringBuilder);
+            await AddIssues(stringBuilder, issues);
 
             AddFooter(stringBuilder);
 
@@ -57,11 +65,40 @@ namespace ReleaseNotesCompiler
             }
             return allText;
         }
-        string GetCommitsLink()
+
+        int GetNumberOfCommits(Milestone previousMilestone)
         {
-            
-            var orderedMilestones = milestones.OrderByDescending(x => x.GetVersion());
-            var previousMilestone = orderedMilestones.FirstOrDefault(x => x.DueOn < targetMilestone.DueOn);
+            if (previousMilestone == null)
+            {
+                return gitHubClient.Repository.Commits.Compare(user, repository, "master", targetMilestone.Title).Result.AheadBy;
+            }
+
+            return gitHubClient.Repository.Commits.Compare(user, repository, previousMilestone.Title, targetMilestone.Title).Result.AheadBy;
+        }
+
+        Milestone GetPreviousMilestone()
+        {
+            var orderedMilestones = milestones.OrderByDescending(x => x.GetVersion()).GetEnumerator();
+
+            Milestone previousMilestone = null;
+
+            while (orderedMilestones.MoveNext())
+            {
+                if (orderedMilestones.Current.Title == targetMilestone.Title)
+                {
+                    break;
+                }
+            }
+
+            if (orderedMilestones.MoveNext())
+            {
+                previousMilestone = orderedMilestones.Current;
+            }
+            return previousMilestone;
+        }
+
+        string GetCommitsLink(Milestone previousMilestone)
+        {
             if (previousMilestone == null)
             {
                 return string.Format("https://github.com/{0}/{1}/commits/{2}", user, repository, targetMilestone.Title);
@@ -69,10 +106,8 @@ namespace ReleaseNotesCompiler
             return string.Format("https://github.com/{0}/{1}/compare/{2}...{3}", user, repository, previousMilestone.Title, targetMilestone.Title);
         }
 
-
-        async Task AddIssues(StringBuilder stringBuilder)
+        async Task AddIssues(StringBuilder stringBuilder, List<Issue> issues)
         {
-            var issues = await GetIssues(targetMilestone);
             Append(issues, "Feature", stringBuilder);
             Append(issues, "Improvement", stringBuilder);
             Append(issues, "Bug", stringBuilder);
@@ -98,7 +133,7 @@ You can download this release from:
         {
             var allIssues = await gitHubClient.AllIssuesForMilestone(milestone);
             var issues = new List<Issue>();
-            foreach (var issue in allIssues.Where(x=>!x.IsPullRequest()))
+            foreach (var issue in allIssues)
             {
                 CheckForValidLabels(issue);
                 issues.Add(issue);

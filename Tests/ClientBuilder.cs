@@ -1,24 +1,24 @@
-﻿using System;
-using System.Net.Http.Headers;
-using Octokit;
-
-public static class ClientBuilder
+﻿namespace ReleaseNotesCompiler.Tests
 {
-    public static GitHubClient Build()
+    using Octokit;
+    using Octokit.Internal;
+
+    public static class ClientBuilder
     {
-
-
-        var githubUsername = Environment.GetEnvironmentVariable("OCTOKIT_GITHUBUSERNAME");
-        var githubPassword = Environment.GetEnvironmentVariable("OCTOKIT_GITHUBPASSWORD");
-
-        if (githubUsername == null || githubPassword == null)
+        public static GitHubClient Build()
         {
-            throw new Exception("expected OCTOKIT_GITHUBUSERNAME and OCTOKIT_GITHUBPASSWORD env variables to exist");
+            var credentialStore = new InMemoryCredentialStore(Helper.Credentials);
+
+            var httpClient = new HttpClientAdapter(Helper.Proxy);
+
+            var connection = new Connection(
+                new ProductHeaderValue("ReleaseNotesCompiler"),
+                GitHubClient.GitHubApiUrl,
+                credentialStore,
+                httpClient,
+                new SimpleJsonSerializer());
+
+            return new GitHubClient(connection);
         }
-
-        return new GitHubClient(new ProductHeaderValue("ReleaseNotesCompiler"))
-        {
-            Credentials = new Credentials(githubUsername, githubPassword)
-        };
     }
 }

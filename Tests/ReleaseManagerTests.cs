@@ -1,25 +1,28 @@
-﻿using System.Diagnostics;
-using System.Linq;
-using NUnit.Framework;
-using ReleaseNotesCompiler;
-
-[TestFixture]
-public class ReleaseManagerTests
+﻿namespace ReleaseNotesCompiler.Tests
 {
-    [Test]
-    [Explicit]
-    public async void List_releases_that_needs_updates()
+    using System.Diagnostics;
+    using System.Linq;
+    using NUnit.Framework;
+    using ReleaseNotesCompiler;
+
+    [TestFixture]
+    public class ReleaseManagerTests
     {
-        var gitHubClient = ClientBuilder.Build();
-
-        var releaseNotesBuilder = new ReleaseManager(gitHubClient, "Particular");
-        var result = await releaseNotesBuilder.GetReleasesInNeedOfUpdates();
-
-        Debug.WriteLine("{0} releases found that needs updating",result.Count());
-        foreach (var releaseName in result)
+        [Test]
+        [Explicit]
+        public async void List_releases_that_needs_updates()
         {
-            Debug.WriteLine(releaseName);
+            var gitHubClient = ClientBuilder.Build();
+
+            var releaseNotesBuilder = new ReleaseManager(gitHubClient, "Particular");
+            var result = await releaseNotesBuilder.GetReleasesInNeedOfUpdates();
+
+            Debug.WriteLine("{0} releases found that needs updating", result.Count());
+            foreach (var releaseName in result)
+            {
+                Debug.WriteLine(releaseName);
+            }
+
         }
-       
-    }  
+    }
 }

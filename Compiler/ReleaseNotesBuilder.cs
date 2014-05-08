@@ -37,11 +37,48 @@ namespace ReleaseNotesCompiler
 
             SetIssueData();
 
+            //stringBuilder.AppendFormat(@"As part of this release we had [{0}]({1}) which resulted in [{2}]({3}) being closed.", commitsText, commitsLink, issuesText, targetMilestone.HtmlUrl());
+
             var markdown = Render.FileToString(@".\templates\particular.md.template", notes);
 
             ValidMarkdownOrThrow(markdown);
 
             return markdown;
+        }
+
+        Milestone GetPreviousMilestone()
+        {
+            // GetVersion strips of prerelease stuff, resulting in an unreliable order if used for pre release versions.
+            // That's probably why there was a DueOn sort earlier too.
+            var orderedMilestones = milestones.OrderByDescending(x => x.GetVersion())
+                                              .ThenByDescending(x => x.DueOn)
+                                              .GetEnumerator();
+
+            Milestone previousMilestone = null;
+
+            while (orderedMilestones.MoveNext())
+            {
+                if (orderedMilestones.Current.Title == notes.targetMilestone.Title)
+                {
+                    break;
+                }
+            }
+
+            if (orderedMilestones.MoveNext())
+            {
+                previousMilestone = orderedMilestones.Current;
+            }
+            return previousMilestone;
+        }
+
+        int GetNumberOfCommits(Milestone previousMilestone)
+        {
+            if (previousMilestone == null)
+            {
+                return gitHubClient.Repository.Commits.Compare(user, repository, "master", notes.targetMilestone.Title).Result.AheadBy;
+            }
+
+            return gitHubClient.Repository.Commits.Compare(user, repository, previousMilestone.Title, notes.targetMilestone.Title).Result.AheadBy;
         }
 
         async Task GetMilestones()
@@ -72,7 +109,12 @@ namespace ReleaseNotesCompiler
         void SetMilestoneData()
         {
             notes.targetMilestone = GetTargetMilestone(notes.milestoneTitle);
-            notes.commitsLink = GetCommitsLink();
+
+            var previousMilestone = GetPreviousMilestone();
+            var numberOfCommits = GetNumberOfCommits(previousMilestone);
+            var commitsText = String.Format(numberOfCommits > 1 ? "{0} commits" : "{0} commit", numberOfCommits);
+            
+            notes.commitsLink = GetCommitsLink(previousMilestone);
             notes.targetMilestoneHtmlUrl = notes.targetMilestone.HtmlUrl();
         }
 
@@ -81,6 +123,8 @@ namespace ReleaseNotesCompiler
             Append(_issues, "Feature");
             Append(_issues, "Improvement");
             Append(_issues, "Bug");
+
+            var issuesText = String.Format(_issues.Count > 1 ? "{0} issues" : "{0} issue", _issues.Count);
         }
 
         void Append(IEnumerable<Issue> issues, string label)
@@ -110,11 +154,8 @@ namespace ReleaseNotesCompiler
             }
         }
 
-        string GetCommitsLink()
+        string GetCommitsLink(Milestone previousMilestone)
         {
-
-            var orderedMilestones = milestones.OrderByDescending(x => x.GetVersion());
-            var previousMilestone = orderedMilestones.FirstOrDefault(x => x.DueOn < notes.targetMilestone.DueOn);
             if (previousMilestone == null)
             {
                 return string.Format("https://github.com/{0}/{1}/commits/{2}", user, repository, notes.targetMilestone.Title);

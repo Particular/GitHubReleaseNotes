@@ -1,4 +1,4 @@
-This release consist of [these issues]({{{targetMilestoneHtmlUrl}}}) that were achieved through [these commits]({{{commitsLink}}}).
+As part of this release we had [{{{commitsText}}}]({{{commitsLink}}}) which resulted in [{{{issuesText}}}]({{{targetMilestoneHtmlUrl}}}) being closed.
 {{{targetMilestone.Description}}}
 {{#issuesByLabel}}
 

@@ -1,4 +1,4 @@
-﻿This release consist of [these issues](https://github.com/Particular/ServiceControl/issues?milestone=7&state=closed) that were achieved through [these commits](https://github.com/Particular/ServiceControl/compare/1.0.0-Beta3...1.0.0-Beta4).
+﻿As part of this release we had [16 commits](https://github.com/Particular/ServiceControl/compare/1.0.0-Beta3...1.0.0-Beta4) which resulted in [5 issues](https://github.com/Particular/ServiceControl/issues?milestone=7&state=closed) being closed.
 
 
 ## Features

@@ -37,8 +37,6 @@ namespace ReleaseNotesCompiler
 
             SetIssueData();
 
-            //stringBuilder.AppendFormat(@"As part of this release we had [{0}]({1}) which resulted in [{2}]({3}) being closed.", commitsText, commitsLink, issuesText, targetMilestone.HtmlUrl());
-
             var markdown = Render.FileToString(@".\templates\particular.md.template", notes);
 
             ValidMarkdownOrThrow(markdown);
@@ -112,7 +110,7 @@ namespace ReleaseNotesCompiler
 
             var previousMilestone = GetPreviousMilestone();
             var numberOfCommits = GetNumberOfCommits(previousMilestone);
-            var commitsText = String.Format(numberOfCommits > 1 ? "{0} commits" : "{0} commit", numberOfCommits);
+            notes.commitsText = String.Format(numberOfCommits > 1 ? "{0} commits" : "{0} commit", numberOfCommits);
             
             notes.commitsLink = GetCommitsLink(previousMilestone);
             notes.targetMilestoneHtmlUrl = notes.targetMilestone.HtmlUrl();
@@ -124,7 +122,7 @@ namespace ReleaseNotesCompiler
             Append(_issues, "Improvement");
             Append(_issues, "Bug");
 
-            var issuesText = String.Format(_issues.Count > 1 ? "{0} issues" : "{0} issue", _issues.Count);
+            notes.issuesText = String.Format(_issues.Count > 1 ? "{0} issues" : "{0} issue", _issues.Count);
         }
 
         void Append(IEnumerable<Issue> issues, string label)
@@ -196,6 +194,8 @@ namespace ReleaseNotesCompiler
             public string targetMilestoneHtmlUrl;
 
             public List<IssueGroup> issuesByLabel = new List<IssueGroup>();
+            public string commitsText;
+            public string issuesText;
 
             public void AddIssue(string label, IssueWrapper[] issues)
             {

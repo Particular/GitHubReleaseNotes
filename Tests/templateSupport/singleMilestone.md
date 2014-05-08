@@ -1,4 +1,4 @@
-﻿This release consist of [these issues](https://github.com/Particular/NServiceBus/issues?milestone=51&state=closed) that were achieved through [these commits](https://github.com/Particular/NServiceBus/compare/4.3.3...4.3.4).
+﻿As part of this release we had [3 commits](https://github.com/Particular/NServiceBus/compare/4.3.3...4.3.4) which resulted in [1 issue](https://github.com/Particular/NServiceBus/issues?milestone=51&state=closed) being closed.
 
 
 ## Bugs

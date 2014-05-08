@@ -13,6 +13,7 @@ namespace ReleaseNotesCompiler
         {
             return issue.PullRequest != null;
         }
+
         public static async Task<IEnumerable<Issue>> AllIssuesForMilestone(this GitHubClient gitHubClient, Milestone milestone)
         {
             var closedIssueRequest = new RepositoryIssueRequest

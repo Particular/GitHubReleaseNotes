@@ -54,7 +54,6 @@
     <Compile Include="ReleaseUpdateRequired.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Fody.targets" />
     <None Include="packages.config" />
     <None Include="templates\particular.md.template">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

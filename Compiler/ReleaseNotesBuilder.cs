@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -34,7 +33,7 @@ namespace ReleaseNotesCompiler
             var stringBuilder = new StringBuilder();
             var previousMilestone = GetPreviousMilestone();
 
-            var numberOfCommits = GetNumberOfCommits(previousMilestone);
+            var numberOfCommits = await GetNumberOfCommits(previousMilestone);
             var commitsLink = GetCommitsLink(previousMilestone);
 
             var commitsText = String.Format(numberOfCommits > 1 ? "{0} commits" : "{0} commit", numberOfCommits);
@@ -46,43 +45,44 @@ namespace ReleaseNotesCompiler
             stringBuilder.AppendLine(targetMilestone.Description);
             stringBuilder.AppendLine();
 
-            await AddIssues(stringBuilder, issues);
+            AddIssues(stringBuilder, issues);
 
             AddFooter(stringBuilder);
-
 
             return stringBuilder.ToString();
         }
 
-        int GetNumberOfCommits(Milestone previousMilestone)
+        async Task<int> GetNumberOfCommits(Milestone previousMilestone)
         {
             if (previousMilestone == null)
             {
-                return gitHubClient.Repository.Commits.Compare(user, repository, "master", targetMilestone.Title).Result.AheadBy;
+                var gitHubClientRepositoryCommitsCompare = await gitHubClient.Repository.Commits.Compare(user, repository, "master", targetMilestone.Title);
+                return gitHubClientRepositoryCommitsCompare.AheadBy;
             }
 
-            return gitHubClient.Repository.Commits.Compare(user, repository, previousMilestone.Title, targetMilestone.Title).Result.AheadBy;
+            return (await gitHubClient.Repository.Commits.Compare(user, repository, previousMilestone.Title, targetMilestone.Title)).AheadBy;
         }
 
         Milestone GetPreviousMilestone()
         {
-            var orderedMilestones = milestones.OrderByDescending(x => x.GetVersion()).GetEnumerator();
-
-            Milestone previousMilestone = null;
-
-            while (orderedMilestones.MoveNext())
+            using (var orderedMilestones = milestones.OrderByDescending(x => x.GetVersion()).GetEnumerator())
             {
-                if (orderedMilestones.Current.Title == targetMilestone.Title)
+                Milestone previousMilestone = null;
+
+                while (orderedMilestones.MoveNext())
                 {
-                    break;
+                    if (orderedMilestones.Current.Title == targetMilestone.Title)
+                    {
+                        break;
+                    }
                 }
-            }
 
-            if (orderedMilestones.MoveNext())
-            {
-                previousMilestone = orderedMilestones.Current;
+                if (orderedMilestones.MoveNext())
+                {
+                    previousMilestone = orderedMilestones.Current;
+                }
+                return previousMilestone;
             }
-            return previousMilestone;
         }
 
         string GetCommitsLink(Milestone previousMilestone)
@@ -94,7 +94,7 @@ namespace ReleaseNotesCompiler
             return string.Format("https://github.com/{0}/{1}/compare/{2}...{3}", user, repository, previousMilestone.Title, targetMilestone.Title);
         }
 
-        async Task AddIssues(StringBuilder stringBuilder, List<Issue> issues)
+        void AddIssues(StringBuilder stringBuilder, List<Issue> issues)
         {
             Append(issues, "Feature", stringBuilder);
             Append(issues, "Improvement", stringBuilder);
@@ -121,7 +121,7 @@ You can download this release from:
         {
             var allIssues = await gitHubClient.AllIssuesForMilestone(milestone);
             var issues = new List<Issue>();
-            foreach (var issue in allIssues.Where(x=>!x.IsPullRequest() && x.State == ItemState.Closed))
+            foreach (var issue in allIssues.Where(x => !x.IsPullRequest() && x.State == ItemState.Closed))
             {
                 CheckForValidLabels(issue);
                 issues.Add(issue);
@@ -131,9 +131,9 @@ You can download this release from:
 
         void CheckForValidLabels(Issue issue)
         {
-            var count = issue.Labels.Count(l => 
-                l.Name == "Bug" || 
-                l.Name == "Internal refactoring" || 
+            var count = issue.Labels.Count(l =>
+                l.Name == "Bug" ||
+                l.Name == "Internal refactoring" ||
                 l.Name == "Feature" ||
                 l.Name == "Improvement");
             if (count != 1)

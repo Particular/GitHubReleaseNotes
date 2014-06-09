@@ -9,7 +9,10 @@
         static int Main(string[] args)
         {
             if (args.Length != 5)
+            {
                 PrintHelp();
+                return 1;
+            }
 
             return MainAsync(args[0], args[1], args[2], args[3], args[4]).Result;
         }

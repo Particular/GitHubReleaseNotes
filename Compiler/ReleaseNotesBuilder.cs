@@ -65,7 +65,7 @@ namespace ReleaseNotesCompiler
 
         Milestone GetPreviousMilestone()
         {
-            using (var orderedMilestones = milestones.OrderByDescending(x => x.GetVersion()).GetEnumerator())
+            using (var orderedMilestones = milestones.OrderByDescending(x => x.Title, new VersionComparer()).GetEnumerator())
             {
                 Milestone previousMilestone = null;
 

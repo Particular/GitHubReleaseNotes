@@ -42,27 +42,11 @@ namespace ReleaseNotesCompiler
             return string.Format("https://github.com/{0}/{1}/issues?milestone={2}&state=closed", user, repository, milestone.Number);
         }
 
-        public static Version GetVersion(this  Milestone milestone)
-        {
-            var nameWithoutPrerelease = milestone.Title.Split('-').First();
-            Version parsedVersion;
-
-            if (!Version.TryParse(nameWithoutPrerelease, out parsedVersion))
-            {
-                return new Version(0, 0);
-            }
-
-            return parsedVersion;
-        }
-
-
         public static string ExtractSummary(this Issue issue)
         {
             IEnumerable<string> lines = issue.Body.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
 
-
             lines = FixHeaders(lines);
-
 
             var builder = new StringBuilder();
             if (lines.Any(x => x.StartsWith("--")))
@@ -88,11 +72,9 @@ namespace ReleaseNotesCompiler
                         }
                     }
 
-
                     builder.AppendLine(line);
 
                     previousIsEmpty = string.IsNullOrWhiteSpace(line);
-
                 }
             }
             else
@@ -134,7 +116,6 @@ namespace ReleaseNotesCompiler
             var inCode = false;
             foreach (var line in lines)
             {
-
                 if (line.StartsWith("```"))
                 {
                     inCode = !inCode;

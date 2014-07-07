@@ -33,13 +33,21 @@ namespace ReleaseNotesCompiler
             var stringBuilder = new StringBuilder();
             var previousMilestone = GetPreviousMilestone();
 
-            var numberOfCommits = await GetNumberOfCommits(previousMilestone);
-            var commitsLink = GetCommitsLink(previousMilestone);
-
-            var commitsText = String.Format(numberOfCommits > 1 ? "{0} commits" : "{0} commit", numberOfCommits);
             var issuesText = String.Format(issues.Count > 1 ? "{0} issues" : "{0} issue", issues.Count);
 
-            stringBuilder.AppendFormat(@"As part of this release we had [{0}]({1}) which resulted in [{2}]({3}) being closed.", commitsText, commitsLink, issuesText, targetMilestone.HtmlUrl());
+            var numberOfCommits = await GetNumberOfCommits(previousMilestone);
+            if (numberOfCommits > 0)
+            {
+                var commitsLink = GetCommitsLink(previousMilestone);
+
+                var commitsText = String.Format(numberOfCommits > 1 ? "{0} commits" : "{0} commit", numberOfCommits);
+
+                stringBuilder.AppendFormat(@"As part of this release we had [{0}]({1}) which resulted in [{2}]({3}) being closed.", commitsText, commitsLink, issuesText, targetMilestone.HtmlUrl());
+            }
+            else
+            {
+                stringBuilder.AppendFormat(@"As part of this release we had [{0}]({1}) closed.", issuesText, targetMilestone.HtmlUrl());
+            }
             stringBuilder.AppendLine();
 
             stringBuilder.AppendLine(targetMilestone.Description);
@@ -59,8 +67,18 @@ namespace ReleaseNotesCompiler
                 var gitHubClientRepositoryCommitsCompare = await gitHubClient.Repository.Commits.Compare(user, repository, "master", targetMilestone.Title);
                 return gitHubClientRepositoryCommitsCompare.AheadBy;
             }
+            try
+            {
 
-            return (await gitHubClient.Repository.Commits.Compare(user, repository, previousMilestone.Title, targetMilestone.Title)).AheadBy;
+                var compareResult = await gitHubClient.Repository.Commits.Compare(user, repository, previousMilestone.Title, targetMilestone.Title);
+                return compareResult.AheadBy;
+            }
+            catch (NotFoundException)
+            {
+                //If there is not tag yet the Compare will return a NotFoundException
+                //we can safely ignore
+                return 0;
+            }
         }
 
         Milestone GetPreviousMilestone()

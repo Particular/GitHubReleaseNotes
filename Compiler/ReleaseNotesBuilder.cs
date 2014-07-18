@@ -33,14 +33,14 @@ namespace ReleaseNotesCompiler
             var stringBuilder = new StringBuilder();
             var previousMilestone = GetPreviousMilestone();
 
-            var issuesText = String.Format(issues.Count > 1 ? "{0} issues" : "{0} issue", issues.Count);
+            var issuesText = String.Format(issues.Count == 1 ? "{0} issue" : "{0} issues", issues.Count);
 
             var numberOfCommits = await GetNumberOfCommits(previousMilestone);
             if (numberOfCommits > 0)
             {
                 var commitsLink = GetCommitsLink(previousMilestone);
 
-                var commitsText = String.Format(numberOfCommits > 1 ? "{0} commits" : "{0} commit", numberOfCommits);
+                var commitsText = String.Format(numberOfCommits == 1 ? "{0} commit" : "{0} commits", numberOfCommits);
 
                 stringBuilder.AppendFormat(@"As part of this release we had [{0}]({1}) which resulted in [{2}]({3}) being closed.", commitsText, commitsLink, issuesText, targetMilestone.HtmlUrl());
             }
@@ -62,15 +62,15 @@ namespace ReleaseNotesCompiler
 
         async Task<int> GetNumberOfCommits(Milestone previousMilestone)
         {
-            if (previousMilestone == null)
-            {
-                var gitHubClientRepositoryCommitsCompare = await gitHubClient.Repository.Commits.Compare(user, repository, "master", targetMilestone.Title);
-                return gitHubClientRepositoryCommitsCompare.AheadBy;
-            }
             try
             {
+                if (previousMilestone == null)
+                {
+                    var gitHubClientRepositoryCommitsCompare = await gitHubClient.Repository.Commits.Compare(user, repository, "master", targetMilestone.Title);
+                    return gitHubClientRepositoryCommitsCompare.AheadBy;
+                }
 
-                var compareResult = await gitHubClient.Repository.Commits.Compare(user, repository, previousMilestone.Title, targetMilestone.Title);
+                var compareResult = await gitHubClient.Repository.Commits.Compare(user, repository, previousMilestone.Title, "master");
                 return compareResult.AheadBy;
             }
             catch (NotFoundException)
@@ -83,7 +83,7 @@ namespace ReleaseNotesCompiler
 
         Milestone GetPreviousMilestone()
         {
-            using (var orderedMilestones = milestones.OrderByDescending(x => x.Title, new VersionComparer()).GetEnumerator())
+            using (var orderedMilestones = milestones.OrderByDescending(x => x.Title, VersionComparer.Default).GetEnumerator())
             {
                 Milestone previousMilestone = null;
 

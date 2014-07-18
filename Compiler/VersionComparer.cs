@@ -6,6 +6,8 @@ namespace ReleaseNotesCompiler
 {
     class VersionComparer : IComparer<string>
     {
+        public static VersionComparer Default = new VersionComparer();
+
         public int Compare(string x, string y)
         {
             var xver = ToVersion(x);

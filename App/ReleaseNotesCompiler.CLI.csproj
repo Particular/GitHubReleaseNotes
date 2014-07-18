@@ -34,7 +34,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Octokit">
-      <HintPath>..\packages\Octokit.0.3.5\lib\net45\Octokit.dll</HintPath>
+      <HintPath>..\packages\Octokit.0.4.0\lib\net45\Octokit.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -106,5 +106,4 @@ foreach (var item in filesToCleanup)
     <CosturaCleanup Config="FodyWeavers.xml" Files="@(ReferenceCopyLocalPaths->'$(OutDir)%(DestinationSubDirectory)%(Filename)%(Extension)')" />
   </Target>
   <Import Project="..\packages\GitVersionTask.1.0.0.0\Build\GitVersionTask.targets" Condition="Exists('..\packages\GitVersionTask.1.0.0.0\Build\GitVersionTask.targets')" />
-
 </Project>

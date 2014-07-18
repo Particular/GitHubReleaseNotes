@@ -55,7 +55,7 @@
                 Body = result,
                 Name = milestone
             };
-            var release = await github.Release.CreateRelease(owner, repository, releaseUpdate);
+            var release = await github.Release.Create(owner, repository, releaseUpdate);
 
             var upload = new ReleaseAssetUpload { FileName = Path.GetFileName(asset), ContentType = "application/octet-stream", RawData = File.Open(asset, FileMode.Open) };
 

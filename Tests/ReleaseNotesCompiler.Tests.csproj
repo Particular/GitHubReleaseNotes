@@ -33,9 +33,9 @@
     <Reference Include="nunit.framework">
       <HintPath>..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
     </Reference>
-    <Reference Include="Octokit, Version=0.3.5.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Octokit, Version=0.4.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Octokit.0.3.5\lib\net45\Octokit.dll</HintPath>
+      <HintPath>..\packages\Octokit.0.4.0\lib\net45\Octokit.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

@@ -7,6 +7,8 @@ using Octokit;
 
 namespace ReleaseNotesCompiler
 {
+    using System.IO;
+
     public class ReleaseNotesBuilder
     {
         GitHubClient gitHubClient;
@@ -55,7 +57,7 @@ namespace ReleaseNotesCompiler
 
             AddIssues(stringBuilder, issues);
 
-            AddFooter(stringBuilder);
+            await AddFooter(stringBuilder);
 
             return stringBuilder.ToString();
         }
@@ -119,12 +121,28 @@ namespace ReleaseNotesCompiler
             Append(issues, "Bug", stringBuilder);
         }
 
-        static void AddFooter(StringBuilder stringBuilder)
+        static async Task AddFooter(StringBuilder stringBuilder)
         {
-            stringBuilder.Append(@"## Where to get it
+            var file = new FileInfo("footer.md");
+
+            if (!file.Exists)
+            {
+                file = new FileInfo("footer.txt");
+            }
+
+            if (!file.Exists)
+            {
+                stringBuilder.Append(@"## Where to get it
 You can download this release from:
 - Our [website](http://particular.net/downloads)
 - Or [nuget](https://www.nuget.org/profiles/nservicebus/)");
+                return;
+            }
+
+            using (var reader = file.OpenText())
+            {
+                stringBuilder.Append(await reader.ReadToEndAsync());
+            }
         }
 
         async Task GetMilestones()

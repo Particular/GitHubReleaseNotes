@@ -130,9 +130,7 @@ You can download this release from:
         async Task GetMilestones()
         {
             var milestonesClient = gitHubClient.Issue.Milestone;
-            var openList = await milestonesClient.GetForRepository(user, repository, new MilestoneRequest { State = ItemState.Open });
-            var closedList = await milestonesClient.GetForRepository(user, repository, new MilestoneRequest { State = ItemState.Closed });
-            milestones = openList.Union(closedList).ToList();
+            milestones = (await milestonesClient.GetForRepository(user, repository)).ToList();
         }
 
         async Task<List<Issue>> GetIssues(Milestone milestone)

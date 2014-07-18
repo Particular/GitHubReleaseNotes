@@ -2,6 +2,7 @@
 {
     using System;
     using System.IO;
+    using System.Linq;
     using System.Threading.Tasks;
     using Octokit;
     using FileMode = System.IO.FileMode;
@@ -33,6 +34,8 @@
 
                 await CreateRelease(github, owner, repository, milestone, asset);
 
+                await CloseMilestone(github, owner, repository, milestone);
+
                 return 0;
             }
             catch (Exception ex)
@@ -60,6 +63,17 @@
             var upload = new ReleaseAssetUpload { FileName = Path.GetFileName(asset), ContentType = "application/octet-stream", RawData = File.Open(asset, FileMode.Open) };
 
             await github.Release.UploadAsset(release, upload);
+        }
+
+        private static async Task CloseMilestone(GitHubClient github, string owner, string repository, string milestoneTitle)
+        {
+            var milestoneClient = github.Issue.Milestone;
+            var openMilestones = await milestoneClient.GetForRepository(owner, repository, new MilestoneRequest { State = ItemState.Open });
+            var milestone = openMilestones.FirstOrDefault(m => m.Title == milestoneTitle);
+            if (milestone == null)
+                return;
+
+            await milestoneClient.Update(owner, repository, milestone.Number, new MilestoneUpdate { State = ItemState.Closed });
         }
     }
 }

@@ -66,7 +66,7 @@
         {
             var options = new Options();
 
-            int result = 1;
+            var result = 1;
 
             if (!Parser.Default.ParseArgumentsStrict(args, options, (verb, subOptions) =>
                 {

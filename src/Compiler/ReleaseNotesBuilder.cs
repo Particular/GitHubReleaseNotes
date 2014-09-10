@@ -28,7 +28,7 @@ namespace ReleaseNotesCompiler
 
         public async Task<string> BuildReleaseNotes()
         {
-            await GetMilestones();
+            GetMilestones();
 
             GetTargetMilestone();
             var issues = await GetIssues(targetMilestone);
@@ -85,24 +85,12 @@ namespace ReleaseNotesCompiler
 
         Milestone GetPreviousMilestone()
         {
-            using (var orderedMilestones = milestones.OrderByDescending(x => x.Title, VersionComparer.Default).GetEnumerator())
-            {
-                Milestone previousMilestone = null;
-
-                while (orderedMilestones.MoveNext())
-                {
-                    if (orderedMilestones.Current.Title == targetMilestone.Title)
-                    {
-                        break;
-                    }
-                }
-
-                if (orderedMilestones.MoveNext())
-                {
-                    previousMilestone = orderedMilestones.Current;
-                }
-                return previousMilestone;
-            }
+            var currentVersion = targetMilestone.Version();
+            return milestones
+                .OrderByDescending(m => m.Version())
+                .Distinct().ToList()
+                .SkipWhile(x => x.Version() >= currentVersion)
+                .FirstOrDefault();
         }
 
         string GetCommitsLink(Milestone previousMilestone)
@@ -145,10 +133,18 @@ You can download this release from:
             }
         }
 
-        async Task GetMilestones()
+        void GetMilestones()
         {
             var milestonesClient = gitHubClient.Issue.Milestone;
-            milestones = (await milestonesClient.GetForRepository(user, repository)).ToList();
+            var closed = milestonesClient.GetForRepository(user, repository,new MilestoneRequest
+            {
+                State = ItemState.Closed
+            }).Result;
+            var open = milestonesClient.GetForRepository(user, repository,new MilestoneRequest
+            {
+                State = ItemState.Open
+            }).Result;
+            milestones = closed.Concat(open).ToList();
         }
 
         async Task<List<Issue>> GetIssues(Milestone milestone)

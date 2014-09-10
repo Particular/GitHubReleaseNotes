@@ -151,7 +151,7 @@ You can download this release from:
         {
             var allIssues = await gitHubClient.AllIssuesForMilestone(milestone);
             var issues = new List<Issue>();
-            foreach (var issue in allIssues.Where(x => !x.IsPullRequest() && x.State == ItemState.Closed))
+            foreach (var issue in allIssues.Where(x => x.State == ItemState.Closed))
             {
                 CheckForValidLabels(issue);
                 issues.Add(issue);

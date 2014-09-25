@@ -35,7 +35,7 @@
         [Explicit]
         public void OctokitTests()
         {
-            var gitHubClient = ClientBuilder.Build();
+            ClientBuilder.Build();
         }
     }
 }

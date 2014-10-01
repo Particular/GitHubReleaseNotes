@@ -121,9 +121,7 @@ namespace ReleaseNotesCompiler
             if (!file.Exists)
             {
                 stringBuilder.Append(@"## Where to get it
-You can download this release from:
-- Our [website](http://particular.net/downloads)
-- Or [nuget](https://www.nuget.org/profiles/nservicebus/)");
+You can download this release from [nuget](https://www.nuget.org/profiles/nservicebus/)");
                 return;
             }
 

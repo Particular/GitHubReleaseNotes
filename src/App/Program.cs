@@ -127,7 +127,7 @@
 
         private static async Task CreateRelease(GitHubClient github, string owner, string repository, string milestone, string asset)
         {
-            var releaseNotesBuilder = new ReleaseNotesBuilder(github, owner, repository, milestone);
+            var releaseNotesBuilder = new ReleaseNotesBuilder(new DefaultGitHubClient(github, owner, repository), owner, repository, milestone);
 
             var result = await releaseNotesBuilder.BuildReleaseNotes();
 

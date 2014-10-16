@@ -11,14 +11,14 @@ namespace ReleaseNotesCompiler
 
     public class ReleaseNotesBuilder
     {
-        GitHubClient gitHubClient;
+        IGitHubClient gitHubClient;
         string user;
         string repository;
         string milestoneTitle;
         List<Milestone> milestones;
         Milestone targetMilestone;
 
-        public ReleaseNotesBuilder(GitHubClient gitHubClient, string user, string repository, string milestoneTitle)
+        public ReleaseNotesBuilder(IGitHubClient gitHubClient, string user, string repository, string milestoneTitle)
         {
             this.gitHubClient = gitHubClient;
             this.user = user;
@@ -28,27 +28,35 @@ namespace ReleaseNotesCompiler
 
         public async Task<string> BuildReleaseNotes()
         {
-            GetMilestones();
+            LoadMilestones();
 
             GetTargetMilestone();
             var issues = await GetIssues(targetMilestone);
             var stringBuilder = new StringBuilder();
             var previousMilestone = GetPreviousMilestone();
+            var numberOfCommits = await gitHubClient.GetNumberOfCommitsBetween(previousMilestone, targetMilestone);
 
-            var issuesText = String.Format(issues.Count == 1 ? "{0} issue" : "{0} issues", issues.Count);
+            if (issues.Count > 0)
+            {
+                var issuesText = String.Format(issues.Count == 1 ? "{0} issue" : "{0} issues", issues.Count);
 
-            var numberOfCommits = await GetNumberOfCommits(previousMilestone);
-            if (numberOfCommits > 0)
+                if (numberOfCommits > 0)
+                {
+                    var commitsLink = GetCommitsLink(previousMilestone);
+                    var commitsText = String.Format(numberOfCommits == 1 ? "{0} commit" : "{0} commits", numberOfCommits);
+
+                    stringBuilder.AppendFormat(@"As part of this release we had [{0}]({1}) which resulted in [{2}]({3}) being closed.", commitsText, commitsLink, issuesText, targetMilestone.HtmlUrl());
+                }
+                else
+                {
+                    stringBuilder.AppendFormat(@"As part of this release we had [{0}]({1}) closed.", issuesText, targetMilestone.HtmlUrl());
+                }
+            }
+            else if (numberOfCommits > 0)
             {
                 var commitsLink = GetCommitsLink(previousMilestone);
-
                 var commitsText = String.Format(numberOfCommits == 1 ? "{0} commit" : "{0} commits", numberOfCommits);
-
-                stringBuilder.AppendFormat(@"As part of this release we had [{0}]({1}) which resulted in [{2}]({3}) being closed.", commitsText, commitsLink, issuesText, targetMilestone.HtmlUrl());
-            }
-            else
-            {
-                stringBuilder.AppendFormat(@"As part of this release we had [{0}]({1}) closed.", issuesText, targetMilestone.HtmlUrl());
+                stringBuilder.AppendFormat(@"As part of this release we had [{0}]({1}).", commitsText, commitsLink); 
             }
             stringBuilder.AppendLine();
 
@@ -60,27 +68,6 @@ namespace ReleaseNotesCompiler
             await AddFooter(stringBuilder);
 
             return stringBuilder.ToString();
-        }
-
-        async Task<int> GetNumberOfCommits(Milestone previousMilestone)
-        {
-            try
-            {
-                if (previousMilestone == null)
-                {
-                    var gitHubClientRepositoryCommitsCompare = await gitHubClient.Repository.Commits.Compare(user, repository, "master", targetMilestone.Title);
-                    return gitHubClientRepositoryCommitsCompare.AheadBy;
-                }
-
-                var compareResult = await gitHubClient.Repository.Commits.Compare(user, repository, previousMilestone.Title, "master");
-                return compareResult.AheadBy;
-            }
-            catch (NotFoundException)
-            {
-                //If there is not tag yet the Compare will return a NotFoundException
-                //we can safely ignore
-                return 0;
-            }
         }
 
         Milestone GetPreviousMilestone()
@@ -131,33 +118,22 @@ You can download this release from [nuget](https://www.nuget.org/profiles/nservi
             }
         }
 
-        void GetMilestones()
+        void LoadMilestones()
         {
-            var milestonesClient = gitHubClient.Issue.Milestone;
-            var closed = milestonesClient.GetForRepository(user, repository,new MilestoneRequest
-            {
-                State = ItemState.Closed
-            }).Result;
-            var open = milestonesClient.GetForRepository(user, repository,new MilestoneRequest
-            {
-                State = ItemState.Open
-            }).Result;
-            milestones = closed.Concat(open).ToList();
+            milestones = gitHubClient.GetMilestones();
         }
 
         async Task<List<Issue>> GetIssues(Milestone milestone)
         {
-            var allIssues = await gitHubClient.AllIssuesForMilestone(milestone);
-            var issues = new List<Issue>();
-            foreach (var issue in allIssues.Where(x => x.State == ItemState.Closed))
+            var issues = await gitHubClient.GetIssues(milestone);
+            foreach (var issue in issues)
             {
                 CheckForValidLabels(issue);
-                issues.Add(issue);
             }
             return issues;
         }
 
-        void CheckForValidLabels(Issue issue)
+        static void CheckForValidLabels(Issue issue)
         {
             var count = issue.Labels.Count(l =>
                 l.Name == "Bug" ||

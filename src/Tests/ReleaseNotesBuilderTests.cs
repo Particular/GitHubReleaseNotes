@@ -73,7 +73,7 @@
 
         static Milestone CreateMilestone(string version)
         {
-            return new Milestone()
+            return new Milestone
                 {
                     Title = version,
                     Url = new Uri("https://github.com/Particular/FakeRepo/issues?q=milestone%3A" + version)
@@ -82,7 +82,7 @@
 
         static Issue CreateIssue(int number, params string[] labels)
         {
-            return new Issue()
+            return new Issue
                 {
                     Number = number,
                     Title = "Issue "+number,

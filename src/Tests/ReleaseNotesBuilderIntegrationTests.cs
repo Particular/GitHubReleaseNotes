@@ -13,7 +13,7 @@
         {
             var gitHubClient = ClientBuilder.Build();
 
-            var releaseNotesBuilder = new ReleaseNotesBuilder(new DefaultGitHubClient(gitHubClient, "Particular", "NServiceBus.Unity"), "Particular", "NServiceBus.Unity", "6.0.1");
+            var releaseNotesBuilder = new ReleaseNotesBuilder(new DefaultGitHubClient(gitHubClient, "Particular", "NServiceBus"), "Particular", "NServiceBus", "5.1.0");
             var result = await releaseNotesBuilder.BuildReleaseNotes();
             Debug.WriteLine(result);
             ClipBoardHelper.SetClipboard(result);

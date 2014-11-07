@@ -39,6 +39,9 @@
     {
         [Option('a', "asset", HelpText = "Path to the file to include in the release.", Required = false)]
         public string AssetPath { get; set; }
+
+        [Option('t', "targetcommitish", HelpText = "The commit to tag. Can be a branch or SHA. Defaults to repo's default branch.", Required = false)]
+        public string TargetCommitish { get; set; }
     }
 
     class PublishSubOptions : CommonSubOptions
@@ -93,7 +96,7 @@
             {
                 var github = options.CreateGitHubClient();
 
-                await CreateRelease(github, options.RepositoryOwner, options.RepositoryName, options.Milestone, options.AssetPath);
+                await CreateRelease(github, options.RepositoryOwner, options.RepositoryName, options.Milestone, options.TargetCommitish, options.AssetPath);
 
                 return 0;
             }
@@ -125,7 +128,7 @@
             }
         }
 
-        private static async Task CreateRelease(GitHubClient github, string owner, string repository, string milestone, string asset)
+        private static async Task CreateRelease(GitHubClient github, string owner, string repository, string milestone, string targetCommitish, string asset)
         {
             var releaseNotesBuilder = new ReleaseNotesBuilder(new DefaultGitHubClient(github, owner, repository), owner, repository, milestone);
 
@@ -137,6 +140,9 @@
                 Body = result,
                 Name = milestone
             };
+            if (!string.IsNullOrEmpty(targetCommitish))
+                releaseUpdate.TargetCommitish = targetCommitish;
+
             var release = await github.Release.Create(owner, repository, releaseUpdate);
 
             if (File.Exists(asset))

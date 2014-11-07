@@ -56,7 +56,7 @@ namespace ReleaseNotesCompiler
             {
                 var commitsLink = GetCommitsLink(previousMilestone);
                 var commitsText = String.Format(numberOfCommits == 1 ? "{0} commit" : "{0} commits", numberOfCommits);
-                stringBuilder.AppendFormat(@"As part of this release we had [{0}]({1}).", commitsText, commitsLink); 
+                stringBuilder.AppendFormat(@"As part of this release we had [{0}]({1}).", commitsText, commitsLink);
             }
             stringBuilder.AppendLine();
 
@@ -153,11 +153,11 @@ You can download this release from [nuget](https://www.nuget.org/profiles/nservi
                 .ToList();
             if (features.Count > 0)
             {
-                stringBuilder.AppendFormat("## {0}s\r\n\r\n", label);
+                stringBuilder.AppendFormat(features.Count == 1 ? "__{0}__\r\n" : "__{0}s__\r\n", label);
 
                 foreach (var issue in features)
                 {
-                    stringBuilder.AppendFormat("### [#{0} {1}]({2})\r\n\r\n{3}\r\n\r\n", issue.Number, issue.Title, issue.HtmlUrl, issue.ExtractSummary());
+                    stringBuilder.AppendFormat("- {1}[__#{0}__]({2})\r\n", issue.Number, issue.Title, issue.HtmlUrl);
                 }
                 stringBuilder.AppendLine();
             }

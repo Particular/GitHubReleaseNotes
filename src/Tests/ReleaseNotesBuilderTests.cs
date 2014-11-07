@@ -2,73 +2,87 @@
 {
     using System;
     using System.Linq;
+    using ApprovalTests;
+    using ApprovalTests.Reporters;
     using NUnit.Framework;
     using Octokit;
 
     [TestFixture]
+    [UseReporter(typeof(DiffReporter))]
     public class ReleaseNotesBuilderTests
     {
         [Test]
-        public void It_prints_number_of_isses_closed()
+        public void NoCommitsNoIssues()
         {
-            var fakeClient = new FakeGitHubClient();
-            fakeClient.Issues.Add(CreateIssue(1, "Bug"));
-            fakeClient.Issues.Add(CreateIssue(2, "Feature"));
-            fakeClient.Issues.Add(CreateIssue(3, "Improvement"));
-
-            fakeClient.Milestones.Add(CreateMilestone("1.2.3"));
-
-            var builder = new ReleaseNotesBuilder(fakeClient, "SzymonPobiega", "FakeRepo", "1.2.3");
-
-            var notes = builder.BuildReleaseNotes().Result;
-
-            Assert.IsTrue(notes.Contains("3 issues"));
-        }
-        
-        [Test]
-        public void It_prints_number_of_commits_if_anything_has_been_committed()
-        {
-            var fakeClient = new FakeGitHubClient();
-            fakeClient.Issues.Add(CreateIssue(1, "Bug"));
-            fakeClient.Issues.Add(CreateIssue(2, "Feature"));
-            fakeClient.Issues.Add(CreateIssue(3, "Improvement"));
-            fakeClient.NumberOfCommits = 5;
-
-            fakeClient.Milestones.Add(CreateMilestone("1.2.3"));
-
-            var builder = new ReleaseNotesBuilder(fakeClient, "SzymonPobiega", "FakeRepo", "1.2.3");
-
-            var notes = builder.BuildReleaseNotes().Result;
-
-            Assert.IsTrue(notes.Contains("5 commits"));
-        }
-        
-        [Test]
-        public void It_does_not_print_number_of_issues_if_nothing_has_been_closed()
-        {
-            var fakeClient = new FakeGitHubClient();
-
-            fakeClient.Milestones.Add(CreateMilestone("1.2.3"));
-
-            var builder = new ReleaseNotesBuilder(fakeClient, "SzymonPobiega", "FakeRepo", "1.2.3");
-
-            var notes = builder.BuildReleaseNotes().Result;
-
-            Assert.IsFalse(notes.Contains("0 issues"));
+            AcceptTest(0);
         }
 
         [Test]
-        public void It_does_not_print_number_of_commits_if_nothing_has_been_committed()
+        public void NoCommitsSomeIssues()
+        {
+            AcceptTest(0, CreateIssue(1, "Bug"), CreateIssue(2, "Feature"), CreateIssue(3, "Improvement"));
+        }
+
+        [Test]
+        public void SomeCommitsNoIssues()
+        {
+            AcceptTest(5);
+        }
+
+        [Test]
+        public void SomeCommitsSomeIssues()
+        {
+            AcceptTest(5, CreateIssue(1, "Bug"), CreateIssue(2, "Feature"), CreateIssue(3, "Improvement"));
+        }
+
+        [Test]
+        public void SingularCommitsNoIssues()
+        {
+            AcceptTest(1);
+        }
+
+        [Test]
+        public void SingularCommitsSomeIssues()
+        {
+            AcceptTest(1, CreateIssue(1, "Bug"), CreateIssue(2, "Feature"), CreateIssue(3, "Improvement"));
+        }
+
+        [Test]
+        public void SingularCommitsSingularIssues()
+        {
+            AcceptTest(1, CreateIssue(1, "Bug"));
+        }
+
+        [Test]
+        public void NoCommitsSingularIssues()
+        {
+            AcceptTest(0, CreateIssue(1, "Bug"));
+        }
+
+        [Test]
+        public void SomeCommitsSingularIssues()
+        {
+            AcceptTest(5, CreateIssue(1, "Bug"));
+        }
+
+        static void AcceptTest(int commits, params Issue[] issues)
         {
             var fakeClient = new FakeGitHubClient();
 
             fakeClient.Milestones.Add(CreateMilestone("1.2.3"));
 
-            var builder = new ReleaseNotesBuilder(fakeClient, "SzymonPobiega", "FakeRepo", "1.2.3");
+            fakeClient.NumberOfCommits = commits;
+
+            foreach (var issue in issues)
+            {
+                fakeClient.Issues.Add(issue);
+            }
+
+            var builder = new ReleaseNotesBuilder(fakeClient, "TestUser", "FakeRepo", "1.2.3");
 
             var notes = builder.BuildReleaseNotes().Result;
 
-            Assert.IsFalse(notes.Contains("0 commits"));
+            Approvals.Verify(notes);
         }
 
         static Milestone CreateMilestone(string version)
@@ -85,10 +99,10 @@
             return new Issue
                 {
                     Number = number,
-                    Title = "Issue "+number,
-                    HtmlUrl = new Uri("http://example.com/"+number),
+                    Title = "Issue " + number,
+                    HtmlUrl = new Uri("http://example.com/" + number),
                     Body = "Some issue",
-                    Labels = labels.Select(x => new Label {Name = x}).ToArray(),
+                    Labels = labels.Select(x => new Label { Name = x }).ToArray(),
                 };
         }
     }

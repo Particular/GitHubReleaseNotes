@@ -2,7 +2,7 @@
 
 
 __Bug__
-- Issue 1[__#1__](http://example.com/1)
+- [__#1__](http://example.com/1) Issue 1
 
 ## Where to get it
 You can download this release from [nuget](https://www.nuget.org/profiles/nservicebus/)

@@ -3,12 +3,10 @@
     using System;
     using System.Linq;
     using ApprovalTests;
-    using ApprovalTests.Reporters;
     using NUnit.Framework;
     using Octokit;
 
     [TestFixture]
-    [UseReporter(typeof(DiffReporter))]
     public class ReleaseNotesBuilderTests
     {
         [Test]

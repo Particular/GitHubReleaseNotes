@@ -157,7 +157,7 @@ You can download this release from [nuget](https://www.nuget.org/profiles/nservi
 
                 foreach (var issue in features)
                 {
-                    stringBuilder.AppendFormat("- {1}[__#{0}__]({2})\r\n", issue.Number, issue.Title, issue.HtmlUrl);
+                    stringBuilder.AppendFormat("- [__#{0}__]({1}) {2}\r\n", issue.Number, issue.HtmlUrl, issue.Title);
                 }
                 stringBuilder.AppendLine();
             }

@@ -44,6 +44,12 @@
         public string TargetCommitish { get; set; }
     }
 
+    class AttachSubOptions : CommonSubOptions
+    {
+        [Option('a', "asset", HelpText = "Path to the file to include in the release.", Required = false)]
+        public string AssetPath { get; set; }
+    }
+
     class PublishSubOptions : CommonSubOptions
     {
     }
@@ -52,6 +58,9 @@
     {
         [VerbOption("create", HelpText = "Creates a draft release notes from a milestone.")]
         public CreateSubOptions CreateVerb { get; set; }
+
+        [VerbOption("attach", HelpText = "Attaches an asset to a release.")]
+        public AttachSubOptions AttachVerb { get; set; }
 
         [VerbOption("publish", HelpText = "Publishes the release notes and closes the milestone.")]
         public PublishSubOptions PublishVerb { get; set; }
@@ -78,6 +87,11 @@
                         result = CreateReleaseAsync((CreateSubOptions)subOptions).Result;
                     }
 
+                    if (verb == "attach")
+                    {
+                        result = AttachToReleaseAsync((AttachSubOptions)subOptions).Result;
+                    }
+
                     if (verb == "publish")
                     {
                         result = PublishReleaseAsync((PublishSubOptions)subOptions).Result;
@@ -97,6 +111,24 @@
                 var github = options.CreateGitHubClient();
 
                 await CreateRelease(github, options.RepositoryOwner, options.RepositoryName, options.Milestone, options.TargetCommitish, options.AssetPath);
+
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+
+                return 1;
+            }
+        }
+
+        static async Task<int> AttachToReleaseAsync(AttachSubOptions options)
+        {
+            try
+            {
+                var github = options.CreateGitHubClient();
+
+                await AttachToRelease(github, options.RepositoryOwner, options.RepositoryName, options.Milestone, options.AssetPath);
 
                 return 0;
             }
@@ -151,6 +183,21 @@
 
                 await github.Release.UploadAsset(release, upload);
             }
+        }
+
+        private static async Task AttachToRelease(GitHubClient github, string owner, string repository, string milestone, string asset)
+        {
+            if (!File.Exists(asset))
+                return;
+
+            var releases = await github.Release.GetAll(owner, repository);
+            var release = releases.FirstOrDefault(r => r.Name == milestone);
+            if (release == null)
+                return;
+
+            var upload = new ReleaseAssetUpload { FileName = Path.GetFileName(asset), ContentType = "application/octet-stream", RawData = File.Open(asset, FileMode.Open) };
+
+            await github.Release.UploadAsset(release, upload);
         }
 
         private static async Task CloseMilestone(GitHubClient github, string owner, string repository, string milestoneTitle)

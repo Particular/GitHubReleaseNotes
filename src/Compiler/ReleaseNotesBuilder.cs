@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -7,8 +9,6 @@ using Octokit;
 
 namespace ReleaseNotesCompiler
 {
-    using System.IO;
-
     public class ReleaseNotesBuilder
     {
         IGitHubClient gitHubClient;
@@ -139,28 +139,34 @@ You can download this release from [nuget](https://www.nuget.org/profiles/nservi
 
         static void CheckForValidLabels(Issue issue)
         {
-            var count = issue.Labels.Count(l =>
-                l.Name.StartsWith(LabelPrefix));
-            if (count != 1)
+            if (issue.Labels.Count(label => label.Name.StartsWith(LabelPrefix)) != 1)
             {
-                var message = string.Format("Bad Issue {0} expected to find a single label starting with '{1}'.", issue.HtmlUrl, LabelPrefix);
-                throw new Exception(message);
+                var message = string.Format(
+                    CultureInfo.CurrentCulture,
+                    "Bad issue {0}. Expected to find a single label starting with '{1}'.",
+                    issue.HtmlUrl,
+                    LabelPrefix);
+
+                throw new InvalidOperationException(message);
             }
         }
 
-        void Append(IEnumerable<Issue> issues, string label, StringBuilder stringBuilder)
+        void Append(IEnumerable<Issue> issues, string labelName, StringBuilder builder)
         {
-            var features = issues.Where(x => x.Labels.Any(l => l.Name == LabelPrefix + label))
+            var relevantIssues = issues
+                .Where(issue => issue.Labels.Any(label => label.Name == LabelPrefix + labelName))
                 .ToList();
-            if (features.Count > 0)
-            {
-                stringBuilder.AppendFormat(features.Count == 1 ? "__{0}__\r\n" : "__{0}s__\r\n", label);
 
-                foreach (var issue in features)
+            if (relevantIssues.Any())
+            {
+                builder.AppendFormat(relevantIssues.Count == 1 ? "__{0}__\r\n" : "__{0}s__\r\n", labelName);
+
+                foreach (var issue in relevantIssues)
                 {
-                    stringBuilder.AppendFormat("- [__#{0}__]({1}) {2}\r\n", issue.Number, issue.HtmlUrl, issue.Title);
+                    builder.AppendFormat("- [__#{0}__]({1}) {2}\r\n", issue.Number, issue.HtmlUrl, issue.Title);
                 }
-                stringBuilder.AppendLine();
+
+                builder.AppendLine();
             }
         }
 

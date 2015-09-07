@@ -6,7 +6,7 @@ In order to improve the quality for our release notes we'll generate them based 
 ### Conventions
 
 * All closed issues for a milestone will be included
-* All issues must have one of the following tags `Bug`, `Feature`, `Internal refactoring`, `Improvement`. Where `Internal refactoring` will be included in a milestone but excluded from the release notes. 
+* All issues must have exactly one `Type: xxx` label. E.g. `Type: Bug`, `Type: Feature`, `Type: Refactoring`, etc. Only issues labelled `Type: Bug` and `Type: Feature `will be included in the release notes. Issues with other `Type: xxx` labels will be included in the milestone but excluded from the release notes.
 * For now the text is taken from the name of the issue
 * Milestones are named {major.minor.patch}
 * Version is picked up from the build number (GFV) and that info is used to find the milestone

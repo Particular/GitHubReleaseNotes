@@ -26,6 +26,11 @@ namespace ReleaseNotesCompiler
             this.milestoneTitle = milestoneTitle;
         }
 
+        public static string LabelPrefix
+        {
+            get { return "Type: "; }
+        }
+
         public async Task<string> BuildReleaseNotes()
         {
             LoadMilestones();
@@ -92,7 +97,6 @@ namespace ReleaseNotesCompiler
         void AddIssues(StringBuilder stringBuilder, List<Issue> issues)
         {
             Append(issues, "Feature", stringBuilder);
-            Append(issues, "Improvement", stringBuilder);
             Append(issues, "Bug", stringBuilder);
         }
 
@@ -136,20 +140,17 @@ You can download this release from [nuget](https://www.nuget.org/profiles/nservi
         static void CheckForValidLabels(Issue issue)
         {
             var count = issue.Labels.Count(l =>
-                l.Name == "Bug" ||
-                l.Name == "Internal refactoring" ||
-                l.Name == "Feature" ||
-                l.Name == "Improvement");
+                l.Name.StartsWith(LabelPrefix));
             if (count != 1)
             {
-                var message = string.Format("Bad Issue {0} expected to find a single label with either 'Bug', 'Internal refactoring', 'Improvement' or 'Feature'.", issue.HtmlUrl);
+                var message = string.Format("Bad Issue {0} expected to find a single label starting with '{1}'.", issue.HtmlUrl, LabelPrefix);
                 throw new Exception(message);
             }
         }
 
         void Append(IEnumerable<Issue> issues, string label, StringBuilder stringBuilder)
         {
-            var features = issues.Where(x => x.Labels.Any(l => l.Name == label))
+            var features = issues.Where(x => x.Labels.Any(l => l.Name == LabelPrefix + label))
                 .ToList();
             if (features.Count > 0)
             {

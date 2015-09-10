@@ -100,7 +100,7 @@
                     Title = "Issue " + number,
                     HtmlUrl = new Uri("http://example.com/" + number),
                     Body = "Some issue",
-                    Labels = labels.Select(x => new Label { Name = x }).ToArray(),
+                    Labels = labels.Select(x => new Label { Name = ReleaseNotesBuilder.LabelPrefix + x }).ToArray(),
                 };
         }
     }

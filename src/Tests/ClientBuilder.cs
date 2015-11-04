@@ -1,6 +1,5 @@
 ﻿namespace ReleaseNotesCompiler.Tests
 {
-    using System.Net.Http;
     using Octokit;
     using Octokit.Internal;
 

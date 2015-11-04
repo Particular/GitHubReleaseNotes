@@ -83,25 +83,29 @@
             Approvals.Verify(notes);
         }
 
+
         static Milestone CreateMilestone(string version)
         {
-            return new Milestone
-                {
-                    Title = version,
-                    Url = new Uri("https://github.com/Particular/FakeRepo/issues?q=milestone%3A" + version)
-                };
+            return new Milestone(new Uri("https://github.com/Particular/FakeRepo/issues?q=milestone%3A" + version), 0, ItemState.Open, version, String.Empty, null, 0, 0, DateTimeOffset.Now, null, null);
         }
 
         static Issue CreateIssue(int number, params string[] labels)
         {
-            return new Issue
-                {
-                    Number = number,
-                    Title = "Issue " + number,
-                    HtmlUrl = new Uri("http://example.com/" + number),
-                    Body = "Some issue",
-                    Labels = labels.Select(x => new Label { Name = ReleaseNotesBuilder.LabelPrefix + x }).ToArray(),
-                };
+            return new Issue(null,
+                new Uri("http://example.com/" + number),
+                null,
+                number,
+                ItemState.Open,
+                "Issue " + number,
+                "Some issue",
+                null,
+                labels.Select(x => new Label(null, ReleaseNotesBuilder.LabelPrefix + x, null)).ToArray(),
+                null,
+                null,
+                0,
+                null,
+                null,
+                DateTimeOffset.Now, null);
         }
     }
 }

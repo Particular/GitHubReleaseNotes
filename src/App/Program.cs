@@ -166,11 +166,11 @@
 
             var result = await releaseNotesBuilder.BuildReleaseNotes();
 
-            var releaseUpdate = new ReleaseUpdate(milestone)
+            var releaseUpdate = new NewRelease(milestone)
             {
                 Draft = true,
                 Body = result,
-                Name = milestone
+                Name = milestone,
             };
             if (!string.IsNullOrEmpty(targetCommitish))
                 releaseUpdate.TargetCommitish = targetCommitish;
@@ -203,7 +203,7 @@
         private static async Task CloseMilestone(GitHubClient github, string owner, string repository, string milestoneTitle)
         {
             var milestoneClient = github.Issue.Milestone;
-            var openMilestones = await milestoneClient.GetForRepository(owner, repository, new MilestoneRequest { State = ItemState.Open });
+            var openMilestones = await milestoneClient.GetAllForRepository(owner, repository, new MilestoneRequest { State = ItemState.Open });
             var milestone = openMilestones.FirstOrDefault(m => m.Title == milestoneTitle);
             if (milestone == null)
                 return;
@@ -218,9 +218,10 @@
             if (release == null)
                 return;
 
-            var releaseUpdate = new ReleaseUpdate(milestone)
+            var releaseUpdate = new ReleaseUpdate
             {
-                Draft = false
+                Draft = false,
+                
             };
 
             await github.Release.Edit(owner, repository, release.Id, releaseUpdate);

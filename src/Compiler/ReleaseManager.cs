@@ -43,25 +43,24 @@ namespace ReleaseNotesCompiler
 
                     if (release != null)
                     {
-
                         var releaseUpdatedAt = GetUpdatedAt(release).ToUniversalTime();
 
                         var allIssues = await gitHubClient.AllIssuesForMilestone(milestone);
 
-                        var latestIssueModification =
-                            allIssues.Where(i => i.State == ItemState.Closed).Max(i => i.ClosedAt.Value).UtcDateTime;
-
-                        Console.Out.WriteLine("Release exists for milestone {0} - Last updated at: {1}, Issues updated at:{2}", potentialRelease, releaseUpdatedAt, latestIssueModification);
-
-                        if (releaseUpdatedAt < latestIssueModification)
+                        var allClosedIssues = allIssues.Where(i => i.State == ItemState.Closed).ToList();
+                        if (allClosedIssues.Count > 0)
                         {
-
-                            releases.Add(new ReleaseUpdateRequired
+                            var latestIssueModification = allClosedIssues.Max(i => i.ClosedAt.Value).UtcDateTime;
+                            Console.Out.WriteLine("Release exists for milestone {0} - Last updated at: {1}, Issues updated at:{2}", potentialRelease, releaseUpdatedAt, latestIssueModification);
+                            if (releaseUpdatedAt < latestIssueModification)
                             {
-                                Release = release.Name,
-                                Repository = repository.Name,
-                                NeedsToBeCreated = true
-                            });
+                                releases.Add(new ReleaseUpdateRequired
+                                {
+                                    Release = release.Name,
+                                    Repository = repository.Name,
+                                    NeedsToBeCreated = true
+                                });
+                            }
                         }
                     }
                     else
@@ -107,7 +106,7 @@ namespace ReleaseNotesCompiler
         async Task<List<Milestone>> GetMilestones(string repository)
         {
             var milestonesClient = gitHubClient.Issue.Milestone;
-            var openList = await milestonesClient.GetForRepository(organization, repository, new MilestoneRequest { State = ItemState.Open });
+            var openList = await milestonesClient.GetAllForRepository(organization, repository, new MilestoneRequest { State = ItemState.Open });
 
             return openList.ToList();
         }

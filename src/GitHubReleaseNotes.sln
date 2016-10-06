@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReleaseNotesCompiler", "Compiler\ReleaseNotesCompiler.csproj", "{B02A026E-CA3A-48F4-BBA9-EB337B0A2035}"
 EndProject
@@ -17,6 +17,11 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NuSpecs", "NuSpecs", "{87E2E61F-5F5D-45F1-8C4A-98E0BF8CA01D}"
 	ProjectSection(SolutionItems) = preProject
 		..\packaging\nuget\releasenotescompiler.cli.nuspec = ..\packaging\nuget\releasenotescompiler.cli.nuspec
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{CCFB4E86-2A64-4E73-A96E-67D58130C960}"
+	ProjectSection(SolutionItems) = preProject
+		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
 Global

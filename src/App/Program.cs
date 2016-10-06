@@ -160,7 +160,7 @@
             }
         }
 
-        private static async Task CreateRelease(GitHubClient github, string owner, string repository, string milestone, string targetCommitish, string asset)
+        static async Task CreateRelease(GitHubClient github, string owner, string repository, string milestone, string targetCommitish, string asset)
         {
             var releaseNotesBuilder = new ReleaseNotesBuilder(new DefaultGitHubClient(github, owner, repository), owner, repository, milestone);
 
@@ -185,7 +185,7 @@
             }
         }
 
-        private static async Task AttachToRelease(GitHubClient github, string owner, string repository, string milestone, string asset)
+        static async Task AttachToRelease(GitHubClient github, string owner, string repository, string milestone, string asset)
         {
             if (!File.Exists(asset))
                 return;
@@ -200,7 +200,7 @@
             await github.Repository.Release.UploadAsset(release, upload);
         }
 
-        private static async Task CloseMilestone(GitHubClient github, string owner, string repository, string milestoneTitle)
+        static async Task CloseMilestone(GitHubClient github, string owner, string repository, string milestoneTitle)
         {
             var milestoneClient = github.Issue.Milestone;
             var openMilestones = await milestoneClient.GetAllForRepository(owner, repository, new MilestoneRequest { State = ItemStateFilter.Open });
@@ -211,7 +211,7 @@
             await milestoneClient.Update(owner, repository, milestone.Number, new MilestoneUpdate { State = ItemState.Closed });
         }
 
-        private static async Task PublishRelease(GitHubClient github, string owner, string repository, string milestone)
+        static async Task PublishRelease(GitHubClient github, string owner, string repository, string milestone)
         {
             var releases = await github.Repository.Release.GetAll(owner, repository);
             var release = releases.FirstOrDefault(r => r.Name == milestone);
@@ -220,8 +220,7 @@
 
             var releaseUpdate = new ReleaseUpdate
             {
-                Draft = false,
-
+                Draft = false
             };
 
             await github.Repository.Release.Edit(owner, repository, release.Id, releaseUpdate);

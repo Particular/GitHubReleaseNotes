@@ -15,7 +15,7 @@ namespace ReleaseNotesCompiler
         string user;
         string repository;
         string milestoneTitle;
-        List<Milestone> milestones;
+        IReadOnlyList<Milestone> milestones;
         Milestone targetMilestone;
 
         public ReleaseNotesBuilder(IGitHubClient gitHubClient, string user, string repository, string milestoneTitle)
@@ -33,7 +33,7 @@ namespace ReleaseNotesCompiler
 
         public async Task<string> BuildReleaseNotes()
         {
-            LoadMilestones();
+            milestones = await gitHubClient.GetMilestones();
 
             GetTargetMilestone();
             var issues = await GetIssues(targetMilestone);
@@ -122,11 +122,7 @@ You can download this release from [nuget](https://www.nuget.org/profiles/nservi
             }
         }
 
-        void LoadMilestones()
-        {
-            milestones = gitHubClient.GetMilestones();
-        }
-
+ 
         async Task<List<Issue>> GetIssues(Milestone milestone)
         {
             var issues = await gitHubClient.GetIssues(milestone);

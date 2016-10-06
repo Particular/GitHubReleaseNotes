@@ -175,13 +175,13 @@
             if (!string.IsNullOrEmpty(targetCommitish))
                 releaseUpdate.TargetCommitish = targetCommitish;
 
-            var release = await github.Release.Create(owner, repository, releaseUpdate);
+            var release = await github.Repository.Release.Create(owner, repository, releaseUpdate);
 
             if (File.Exists(asset))
             {
                 var upload = new ReleaseAssetUpload { FileName = Path.GetFileName(asset), ContentType = "application/octet-stream", RawData = File.Open(asset, FileMode.Open) };
 
-                await github.Release.UploadAsset(release, upload);
+                await github.Repository.Release.UploadAsset(release, upload);
             }
         }
 
@@ -190,20 +190,20 @@
             if (!File.Exists(asset))
                 return;
 
-            var releases = await github.Release.GetAll(owner, repository);
+            var releases = await github.Repository.Release.GetAll(owner, repository);
             var release = releases.FirstOrDefault(r => r.Name == milestone);
             if (release == null)
                 return;
 
             var upload = new ReleaseAssetUpload { FileName = Path.GetFileName(asset), ContentType = "application/octet-stream", RawData = File.Open(asset, FileMode.Open) };
 
-            await github.Release.UploadAsset(release, upload);
+            await github.Repository.Release.UploadAsset(release, upload);
         }
 
         private static async Task CloseMilestone(GitHubClient github, string owner, string repository, string milestoneTitle)
         {
             var milestoneClient = github.Issue.Milestone;
-            var openMilestones = await milestoneClient.GetAllForRepository(owner, repository, new MilestoneRequest { State = ItemState.Open });
+            var openMilestones = await milestoneClient.GetAllForRepository(owner, repository, new MilestoneRequest { State = ItemStateFilter.Open });
             var milestone = openMilestones.FirstOrDefault(m => m.Title == milestoneTitle);
             if (milestone == null)
                 return;
@@ -213,7 +213,7 @@
 
         private static async Task PublishRelease(GitHubClient github, string owner, string repository, string milestone)
         {
-            var releases = await github.Release.GetAll(owner, repository);
+            var releases = await github.Repository.Release.GetAll(owner, repository);
             var release = releases.FirstOrDefault(r => r.Name == milestone);
             if (release == null)
                 return;
@@ -221,10 +221,10 @@
             var releaseUpdate = new ReleaseUpdate
             {
                 Draft = false,
-                
+
             };
 
-            await github.Release.Edit(owner, repository, release.Id, releaseUpdate);
+            await github.Repository.Release.Edit(owner, repository, release.Id, releaseUpdate);
         }
     }
 }

@@ -93,10 +93,32 @@ namespace ReleaseNotesCompiler
             return string.Format("https://github.com/{0}/{1}/compare/{2}...{3}", user, repository, previousMilestone.Title, targetMilestone.Title);
         }
 
-        void AddIssues(StringBuilder stringBuilder, List<Issue> issues)
+        void AddIssues(StringBuilder builder, List<Issue> issues)
         {
-            Append(issues, "Feature", stringBuilder);
-            Append(issues, "Bug", stringBuilder);
+            var bugs = issues
+               .Where(issue => issue.Labels.Any(label => label.Name == "Type: Bug"))
+               .ToList();
+
+            if (bugs.Any())
+            {
+                PrintHeading("Bugs", builder);
+
+                PrintIssue(builder, bugs);
+
+                builder.AppendLine();
+            }
+
+            var others = issues.Where(issue =>!issue.Labels.Any() || issue.Labels.Any(label => label.Name != "Type: Refactoring" && label.Name != "Type: Bug"))
+                         .ToList();
+
+            if (others.Any())
+            {
+                PrintHeading("Improvements/Features", builder);
+
+                PrintIssue(builder, others);
+
+                builder.AppendLine();
+            }
         }
 
         static async Task AddFooter(StringBuilder stringBuilder)
@@ -121,22 +143,18 @@ You can download this release from [nuget](https://www.nuget.org/profiles/nservi
             }
         }
 
-        void Append(IEnumerable<Issue> issues, string labelName, StringBuilder builder)
+
+
+        static void PrintHeading(string labelName, StringBuilder builder)
         {
-            var relevantIssues = issues
-                .Where(issue => issue.Labels.Any(label => label.Name == LabelPrefix + labelName))
-                .ToList();
+            builder.AppendFormat($"__{labelName}__\r\n");
+        }
 
-            if (relevantIssues.Any())
+        static void PrintIssue(StringBuilder builder, List<Issue> relevantIssues)
+        {
+            foreach (var issue in relevantIssues)
             {
-                builder.AppendFormat(relevantIssues.Count == 1 ? "__{0}__\r\n" : "__{0}s__\r\n", labelName);
-
-                foreach (var issue in relevantIssues)
-                {
-                    builder.AppendFormat("- [__#{0}__]({1}) {2}\r\n", issue.Number, issue.HtmlUrl, issue.Title);
-                }
-
-                builder.AppendLine();
+                builder.Append($"- [__#{issue.Number}__]({issue.HtmlUrl}) {issue.Title}\r\n");
             }
         }
 
@@ -145,7 +163,7 @@ You can download this release from [nuget](https://www.nuget.org/profiles/nservi
             targetMilestone = milestones.FirstOrDefault(x => x.Title == milestoneTitle);
             if (targetMilestone == null)
             {
-                throw new Exception(string.Format("Could not find milestone for '{0}'.", milestoneTitle));
+                throw new Exception($"Could not find milestone for '{milestoneTitle}'.");
             }
         }
     }

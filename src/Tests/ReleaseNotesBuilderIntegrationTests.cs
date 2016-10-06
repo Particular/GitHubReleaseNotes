@@ -12,7 +12,7 @@
         [TestCase("NServiceBus", "5.1.0")]
         [TestCase("ServiceControl", "1.0.0-Beta4")]
         [TestCase("NServiceBus", "6.0.0")]
-        public async Task CoreVersion6(string repo, string version)
+        public async Task GenerateReleaseNotes(string repo, string version)
         {
             var gitHubClient = ClientBuilder.Build();
 

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -36,7 +35,7 @@ namespace ReleaseNotesCompiler
             milestones = await gitHubClient.GetMilestones();
 
             GetTargetMilestone();
-            var issues = await GetIssues(targetMilestone);
+            var issues = await gitHubClient.GetIssues(targetMilestone);
             var stringBuilder = new StringBuilder();
             var previousMilestone = GetPreviousMilestone();
             var numberOfCommits = await gitHubClient.GetNumberOfCommitsBetween(previousMilestone, targetMilestone);
@@ -119,31 +118,6 @@ You can download this release from [nuget](https://www.nuget.org/profiles/nservi
             using (var reader = file.OpenText())
             {
                 stringBuilder.Append(await reader.ReadToEndAsync());
-            }
-        }
-
- 
-        async Task<List<Issue>> GetIssues(Milestone milestone)
-        {
-            var issues = await gitHubClient.GetIssues(milestone);
-            foreach (var issue in issues)
-            {
-                CheckForValidLabels(issue);
-            }
-            return issues;
-        }
-
-        static void CheckForValidLabels(Issue issue)
-        {
-            if (issue.Labels.Count(label => label.Name.StartsWith(LabelPrefix)) != 1)
-            {
-                var message = string.Format(
-                    CultureInfo.CurrentCulture,
-                    "Bad issue {0}. Expected to find a single label starting with '{1}'.",
-                    issue.HtmlUrl,
-                    LabelPrefix);
-
-                throw new InvalidOperationException(message);
             }
         }
 

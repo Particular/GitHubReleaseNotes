@@ -20,8 +20,6 @@ namespace ReleaseNotesCompiler
             this.milestoneTitle = milestoneTitle;
         }
 
-        public static string LabelPrefix => "Type: ";
-
         public async Task<string> BuildReleaseNotes()
         {
             var milestones = await gitHubClient.GetMilestones();
@@ -93,7 +91,7 @@ namespace ReleaseNotesCompiler
         void AddIssues(StringBuilder builder, List<Issue> issues)
         {
             var bugs = issues
-               .Where(issue => issue.Labels.Any(label => label.Name == "Type: Bug"))
+               .Where(issue => issue.IsBug())
                .ToList();
 
             if (bugs.Any())
@@ -105,7 +103,7 @@ namespace ReleaseNotesCompiler
                 builder.AppendLine();
             }
 
-            var others = issues.Where(issue => !issue.Labels.Any() || issue.Labels.Any(label => label.Name != "Type: Refactoring" && label.Name != "Type: Bug"))
+            var others = issues.Where(issue =>!issue.IsBug())
                          .ToList();
 
             if (others.Any())

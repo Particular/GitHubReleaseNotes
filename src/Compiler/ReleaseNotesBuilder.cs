@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -9,15 +8,10 @@ using Octokit;
 
 namespace ReleaseNotesCompiler
 {
+    using static System.String;
+
     public class ReleaseNotesBuilder
     {
-        IGitHubClient gitHubClient;
-        string user;
-        string repository;
-        string milestoneTitle;
-        List<Milestone> milestones;
-        Milestone targetMilestone;
-
         public ReleaseNotesBuilder(IGitHubClient gitHubClient, string user, string repository, string milestoneTitle)
         {
             this.gitHubClient = gitHubClient;
@@ -26,42 +20,42 @@ namespace ReleaseNotesCompiler
             this.milestoneTitle = milestoneTitle;
         }
 
-        public static string LabelPrefix
-        {
-            get { return "Type: "; }
-        }
-
         public async Task<string> BuildReleaseNotes()
         {
-            LoadMilestones();
+            var milestones = await gitHubClient.GetMilestones();
 
-            GetTargetMilestone();
-            var issues = await GetIssues(targetMilestone);
+            var targetMilestone = milestones.FirstOrDefault(x => x.Title == milestoneTitle);
+
+            if (targetMilestone == null)
+            {
+                throw new Exception($"Could not find milestone for '{milestoneTitle}'.");
+            }
+            var issues = await gitHubClient.GetIssues(targetMilestone);
             var stringBuilder = new StringBuilder();
-            var previousMilestone = GetPreviousMilestone();
+            var previousMilestone = GetPreviousMilestone(targetMilestone, milestones);
             var numberOfCommits = await gitHubClient.GetNumberOfCommitsBetween(previousMilestone, targetMilestone);
 
             if (issues.Count > 0)
             {
-                var issuesText = String.Format(issues.Count == 1 ? "{0} issue" : "{0} issues", issues.Count);
+                var issuesText = Format(issues.Count == 1 ? "{0} issue" : "{0} issues", issues.Count);
 
                 if (numberOfCommits > 0)
                 {
-                    var commitsLink = GetCommitsLink(previousMilestone);
-                    var commitsText = String.Format(numberOfCommits == 1 ? "{0} commit" : "{0} commits", numberOfCommits);
+                    var commitsLink = GetCommitsLink(targetMilestone, previousMilestone);
+                    var commitsText = Format(numberOfCommits == 1 ? "{0} commit" : "{0} commits", numberOfCommits);
 
-                    stringBuilder.AppendFormat(@"As part of this release we had [{0}]({1}) which resulted in [{2}]({3}) being closed.", commitsText, commitsLink, issuesText, targetMilestone.HtmlUrl());
+                    stringBuilder.Append($"As part of this release we had [{commitsText}]({commitsLink}) which resulted in [{issuesText}]({targetMilestone.HtmlUrl()}) being closed.");
                 }
                 else
                 {
-                    stringBuilder.AppendFormat(@"As part of this release we had [{0}]({1}) closed.", issuesText, targetMilestone.HtmlUrl());
+                    stringBuilder.Append($"As part of this release we had [{issuesText}]({targetMilestone.HtmlUrl()}) closed.");
                 }
             }
             else if (numberOfCommits > 0)
             {
-                var commitsLink = GetCommitsLink(previousMilestone);
-                var commitsText = String.Format(numberOfCommits == 1 ? "{0} commit" : "{0} commits", numberOfCommits);
-                stringBuilder.AppendFormat(@"As part of this release we had [{0}]({1}).", commitsText, commitsLink);
+                var commitsLink = GetCommitsLink(targetMilestone, previousMilestone);
+                var commitsText = Format(numberOfCommits == 1 ? "{0} commit" : "{0} commits", numberOfCommits);
+                stringBuilder.Append($"As part of this release we had [{commitsText}]({commitsLink}).");
             }
             stringBuilder.AppendLine();
 
@@ -75,7 +69,7 @@ namespace ReleaseNotesCompiler
             return stringBuilder.ToString();
         }
 
-        Milestone GetPreviousMilestone()
+        Milestone GetPreviousMilestone(Milestone targetMilestone, IReadOnlyList<Milestone> milestones)
         {
             var currentVersion = targetMilestone.Version();
             return milestones
@@ -85,19 +79,41 @@ namespace ReleaseNotesCompiler
                 .FirstOrDefault();
         }
 
-        string GetCommitsLink(Milestone previousMilestone)
+        string GetCommitsLink(Milestone targetMilestone, Milestone previousMilestone)
         {
             if (previousMilestone == null)
             {
-                return string.Format("https://github.com/{0}/{1}/commits/{2}", user, repository, targetMilestone.Title);
+                return $"https://github.com/{user}/{repository}/commits/{targetMilestone.Title}";
             }
-            return string.Format("https://github.com/{0}/{1}/compare/{2}...{3}", user, repository, previousMilestone.Title, targetMilestone.Title);
+            return $"https://github.com/{user}/{repository}/compare/{previousMilestone.Title}...{targetMilestone.Title}";
         }
 
-        void AddIssues(StringBuilder stringBuilder, List<Issue> issues)
+        void AddIssues(StringBuilder builder, List<Issue> issues)
         {
-            Append(issues, "Feature", stringBuilder);
-            Append(issues, "Bug", stringBuilder);
+            var bugs = issues
+               .Where(issue => issue.IsBug())
+               .ToList();
+
+            if (bugs.Any())
+            {
+                PrintHeading("Bugs", builder);
+
+                PrintIssue(builder, bugs);
+
+                builder.AppendLine();
+            }
+
+            var others = issues.Where(issue =>!issue.IsBug())
+                         .ToList();
+
+            if (others.Any())
+            {
+                PrintHeading("Improvements/Features", builder);
+
+                PrintIssue(builder, others);
+
+                builder.AppendLine();
+            }
         }
 
         static async Task AddFooter(StringBuilder stringBuilder)
@@ -122,61 +138,22 @@ You can download this release from [nuget](https://www.nuget.org/profiles/nservi
             }
         }
 
-        void LoadMilestones()
+        static void PrintHeading(string labelName, StringBuilder builder)
         {
-            milestones = gitHubClient.GetMilestones();
+            builder.AppendFormat($"__{labelName}__\r\n");
         }
 
-        async Task<List<Issue>> GetIssues(Milestone milestone)
+        static void PrintIssue(StringBuilder builder, List<Issue> relevantIssues)
         {
-            var issues = await gitHubClient.GetIssues(milestone);
-            foreach (var issue in issues)
+            foreach (var issue in relevantIssues)
             {
-                CheckForValidLabels(issue);
-            }
-            return issues;
-        }
-
-        static void CheckForValidLabels(Issue issue)
-        {
-            if (issue.Labels.Count(label => label.Name.StartsWith(LabelPrefix)) != 1)
-            {
-                var message = string.Format(
-                    CultureInfo.CurrentCulture,
-                    "Bad issue {0}. Expected to find a single label starting with '{1}'.",
-                    issue.HtmlUrl,
-                    LabelPrefix);
-
-                throw new InvalidOperationException(message);
+                builder.Append($"- [__#{issue.Number}__]({issue.HtmlUrl}) {issue.Title}\r\n");
             }
         }
 
-        void Append(IEnumerable<Issue> issues, string labelName, StringBuilder builder)
-        {
-            var relevantIssues = issues
-                .Where(issue => issue.Labels.Any(label => label.Name == LabelPrefix + labelName))
-                .ToList();
-
-            if (relevantIssues.Any())
-            {
-                builder.AppendFormat(relevantIssues.Count == 1 ? "__{0}__\r\n" : "__{0}s__\r\n", labelName);
-
-                foreach (var issue in relevantIssues)
-                {
-                    builder.AppendFormat("- [__#{0}__]({1}) {2}\r\n", issue.Number, issue.HtmlUrl, issue.Title);
-                }
-
-                builder.AppendLine();
-            }
-        }
-
-        void GetTargetMilestone()
-        {
-            targetMilestone = milestones.FirstOrDefault(x => x.Title == milestoneTitle);
-            if (targetMilestone == null)
-            {
-                throw new Exception(string.Format("Could not find milestone for '{0}'.", milestoneTitle));
-            }
-        }
+        IGitHubClient gitHubClient;
+        string user;
+        string repository;
+        string milestoneTitle;
     }
 }

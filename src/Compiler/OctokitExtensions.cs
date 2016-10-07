@@ -17,12 +17,12 @@ namespace ReleaseNotesCompiler
             var closedIssueRequest = new RepositoryIssueRequest
             {
                 Milestone = milestone.Number.ToString(),
-                State = ItemState.Closed
+                State = ItemStateFilter.Closed
             };
             var openIssueRequest = new RepositoryIssueRequest
             {
                 Milestone = milestone.Number.ToString(),
-                State = ItemState.Open
+                State = ItemStateFilter.Open
             };
             var parts = milestone.Url.AbsolutePath.Split('/');
             var user = parts[2];

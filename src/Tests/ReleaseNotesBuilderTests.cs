@@ -94,18 +94,24 @@
             return new Issue(null,
                 new Uri("http://example.com/" + number),
                 null,
+                null,
                 number,
                 ItemState.Open,
                 "Issue " + number,
                 "Some issue",
                 null,
-                labels.Select(x => new Label(null, ReleaseNotesBuilder.LabelPrefix + x, null)).ToArray(),
+                null,
+                labels.Select(x => new Label(null, x, null)).ToArray(),
                 null,
                 null,
                 0,
                 null,
                 null,
-                DateTimeOffset.Now, null);
+                DateTimeOffset.Now,
+                null,
+                1,
+                false,
+                null);
         }
     }
 }

@@ -1,41 +1,25 @@
 ﻿namespace ReleaseNotesCompiler.Tests
 {
-    using System.Diagnostics;
+    using System;
+    using System.Threading.Tasks;
     using NUnit.Framework;
     using ReleaseNotesCompiler;
 
     [TestFixture]
     public class ReleaseNotesBuilderIntegrationTests
     {
-        [Test]
         [Explicit]
-        public async void SingleMilestone()
+        [TestCase("NServiceBus", "5.1.0")]
+        [TestCase("ServiceControl", "1.0.0-Beta4")]
+        [TestCase("NServiceBus", "6.0.0")]
+        public async Task GenerateReleaseNotes(string repo, string version)
         {
             var gitHubClient = ClientBuilder.Build();
 
-            var releaseNotesBuilder = new ReleaseNotesBuilder(new DefaultGitHubClient(gitHubClient, "Particular", "NServiceBus"), "Particular", "NServiceBus", "5.1.0");
+            var releaseNotesBuilder = new ReleaseNotesBuilder(new DefaultGitHubClient(gitHubClient, "Particular", repo), "Particular", repo, version);
             var result = await releaseNotesBuilder.BuildReleaseNotes();
-            Debug.WriteLine(result);
+            Console.WriteLine(result);
             ClipBoardHelper.SetClipboard(result);
-        }
-
-        [Test]
-        [Explicit]
-        public async void SingleMilestone3()
-        {
-            var gitHubClient = ClientBuilder.Build();
-
-            var releaseNotesBuilder = new ReleaseNotesBuilder(new DefaultGitHubClient(gitHubClient, "Particular", "ServiceControl"), "Particular", "ServiceControl", "1.0.0-Beta4");
-            var result = await releaseNotesBuilder.BuildReleaseNotes();
-            Debug.WriteLine(result);
-            ClipBoardHelper.SetClipboard(result);
-        }
-
-        [Test]
-        [Explicit]
-        public void OctokitTests()
-        {
-            ClientBuilder.Build();
         }
     }
 }

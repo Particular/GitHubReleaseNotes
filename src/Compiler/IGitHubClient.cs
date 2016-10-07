@@ -8,6 +8,6 @@
     {
         Task<int> GetNumberOfCommitsBetween(Milestone previousMilestone, Milestone currentMilestone);
         Task<List<Issue>> GetIssues(Milestone targetMilestone);
-        List<Milestone> GetMilestones();
+        Task<IReadOnlyList<Milestone>> GetMilestones();
     }
 }

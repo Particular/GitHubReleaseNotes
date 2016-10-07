@@ -24,11 +24,11 @@
             {
                 if (previousMilestone == null)
                 {
-                    var gitHubClientRepositoryCommitsCompare = await gitHubClient.Repository.Commits.Compare(user, repository, "master", currentMilestone.Title);
+                    var gitHubClientRepositoryCommitsCompare = await gitHubClient.Repository.Commit.Compare(user, repository, "master", currentMilestone.Title);
                     return gitHubClientRepositoryCommitsCompare.AheadBy;
                 }
 
-                var compareResult = await gitHubClient.Repository.Commits.Compare(user, repository, previousMilestone.Title, "master");
+                var compareResult = await gitHubClient.Repository.Commit.Compare(user, repository, previousMilestone.Title, "master");
                 return compareResult.AheadBy;
             }
             catch (NotFoundException)
@@ -45,18 +45,14 @@
             return allIssues.Where(x => x.State == ItemState.Closed).ToList();
         }
 
-        public List<Milestone> GetMilestones()
+        public Task<IReadOnlyList<Milestone>> GetMilestones()
         {
             var milestonesClient = gitHubClient.Issue.Milestone;
-            var closed = milestonesClient.GetAllForRepository(user, repository, new MilestoneRequest
+            return milestonesClient.GetAllForRepository(user, repository, new MilestoneRequest
             {
-                State = ItemState.Closed
-            }).Result;
-            var open = milestonesClient.GetAllForRepository(user, repository, new MilestoneRequest
-            {
-                State = ItemState.Open
-            }).Result;
-            return closed.Concat(open).ToList();
+                State = ItemStateFilter.All
+            });
+           
         }
     }
 }

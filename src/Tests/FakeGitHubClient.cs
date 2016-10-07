@@ -1,6 +1,7 @@
 ﻿namespace ReleaseNotesCompiler.Tests
 {
     using System.Collections.Generic;
+    using System.Collections.ObjectModel;
     using System.Threading.Tasks;
     using Octokit;
     using IGitHubClient = ReleaseNotesCompiler.IGitHubClient;
@@ -27,9 +28,9 @@
             return Task.FromResult(Issues);
         }
 
-        public List<Milestone> GetMilestones()
+        public Task<IReadOnlyList<Milestone>> GetMilestones()
         {
-            return Milestones;
+            return Task.FromResult<IReadOnlyList<Milestone>>(new ReadOnlyCollection<Milestone>(Milestones));
         }
     }
 }

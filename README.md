@@ -1,6 +1,8 @@
 GitHubReleaseNotes
 ====================
 
+**This project is no longer maintained. Consider using https://github.com/GitTools/GitReleaseManager instead**
+
 Generates release notes for a milestone in a GitHub repo based on issues associated with the milestone.
 
 ### Conventions
